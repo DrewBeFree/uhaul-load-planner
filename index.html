@@ -191,6 +191,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="rotBtn" style="display:none" onclick="rotateItem()">↻ Rotate</button>
       <button class="btn danger" id="delBtn" style="display:none" onclick="deleteItem()">Delete</button>
       <button class="btn primary" onclick="saveItem()">Save</button>
     </div>
@@ -434,11 +435,11 @@ function openModal(id) {
     document.getElementById('iW').value = item.wIn;
     document.getElementById('iD').value = item.dIn;
     document.getElementById('iNotes').value = item.notes || '';
-    selColor = item.color; del.style.display = 'block';
+    selColor = item.color; del.style.display = 'block'; document.getElementById('rotBtn').style.display = 'block';
   } else {
     document.getElementById('modalTitle').textContent = 'Add item';
     ['iName','iW','iD','iNotes'].forEach(id => document.getElementById(id).value = '');
-    selColor = COLORS[0]; del.style.display = 'none';
+    selColor = COLORS[0]; del.style.display = 'none'; document.getElementById('rotBtn').style.display = 'none';
   }
   buildColorGrid();
   document.getElementById('modalOverlay').style.display = 'flex';
@@ -464,6 +465,14 @@ function confirmDelete(id) {
   items = items.filter(i => i.id !== id);
   if (selectedId === id) selectedId = null;
   render(); scheduleSave();
+}
+
+function rotateItem() {
+  if (!editingId) return;
+  const w = parseInt(document.getElementById('iW').value);
+  const d = parseInt(document.getElementById('iD').value);
+  document.getElementById('iW').value = d;
+  document.getElementById('iD').value = w;
 }
 
 function deleteItem() { if (!editingId) return; closeModal(); confirmDelete(editingId); }
