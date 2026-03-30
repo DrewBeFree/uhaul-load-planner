@@ -17,206 +17,113 @@
     --accent: #e8a840;
     --accent2: #c8881e;
     --floor: #c8b89a;
-    --floor-dark: #a89878;
-    --truck-body: #2a2a28;
     --truck-wall: #1a1a18;
-    --snap: 4px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; min-height: 100vh; display: flex; flex-direction: column; }
 
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 20px; border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
   .logo { font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
   .logo span { color: var(--text3); font-weight: 400; }
-  .header-actions { display: flex; gap: 8px; align-items: center; }
-  .btn {
-    padding: 6px 12px; border-radius: 4px; font-size: 11px; font-family: inherit;
-    cursor: pointer; border: 1px solid var(--border2); background: var(--surface2);
-    color: var(--text2); letter-spacing: 1px; text-transform: uppercase; transition: all 0.15s;
-  }
+  .header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .sync-status { font-size: 10px; letter-spacing: 1px; color: var(--text3); min-width: 80px; text-align: right; }
+  .sync-status.saving { color: var(--accent); }
+  .sync-status.saved { color: #6db87a; }
+  .sync-status.error { color: #c45a5a; }
+  .btn { padding: 6px 12px; border-radius: 4px; font-size: 11px; font-family: inherit; cursor: pointer; border: 1px solid var(--border2); background: var(--surface2); color: var(--text2); letter-spacing: 1px; text-transform: uppercase; transition: all 0.15s; }
   .btn:hover { border-color: var(--accent); color: var(--accent); }
   .btn.primary { background: var(--accent); color: #1a1208; border-color: var(--accent); font-weight: 700; }
   .btn.primary:hover { background: var(--accent2); border-color: var(--accent2); }
-  .btn.danger { border-color: #8b3a3a; color: #c45a5a; }
-  .btn.danger:hover { background: #8b3a3a; color: #f0a0a0; }
+  .btn.danger:hover { background: #6b2a2a; border-color: #c45a5a; color: #f0a0a0; }
+  .snap-toggle { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text3); letter-spacing: 1px; }
+  .toggle-input { appearance: none; width: 28px; height: 14px; background: var(--border); border-radius: 7px; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; }
+  .toggle-input:checked { background: var(--accent); }
+  .toggle-input::after { content: ''; position: absolute; width: 10px; height: 10px; border-radius: 50%; background: white; top: 2px; left: 2px; transition: transform 0.2s; }
+  .toggle-input:checked::after { transform: translateX(14px); }
 
   .layout { display: flex; flex: 1; overflow: hidden; }
-
-  .sidebar {
-    width: 240px; min-width: 240px; background: var(--surface);
-    border-right: 1px solid var(--border); display: flex; flex-direction: column;
-    overflow: hidden;
-  }
-  .sidebar-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-  .sidebar-label { font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 10px; }
-  .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .sidebar { width: 230px; min-width: 230px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .sidebar-section { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .sidebar-label { font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 8px; }
+  .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
   .stat-key { font-size: 11px; color: var(--text2); }
   .stat-val { font-size: 12px; font-weight: 700; color: var(--text); }
   .stat-val.good { color: #6db87a; }
   .stat-val.warn { color: var(--accent); }
-  .progress-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 6px; }
   .progress-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.3s; }
-
-  .item-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .item-list { flex: 1; overflow-y: auto; padding: 6px; }
   .item-list::-webkit-scrollbar { width: 4px; }
-  .item-list::-webkit-scrollbar-track { background: transparent; }
   .item-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-  .item-chip {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 10px; margin-bottom: 4px; border-radius: 4px;
-    border: 1px solid var(--border); background: var(--surface2);
-    cursor: pointer; transition: all 0.1s; font-size: 11px;
-  }
+  .item-chip { display: flex; align-items: center; gap: 7px; padding: 7px 9px; margin-bottom: 3px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; transition: all 0.1s; font-size: 11px; }
   .item-chip:hover { border-color: var(--border2); }
   .item-chip.selected { border-color: var(--accent); background: #2a2210; }
-  .item-chip.on-floor { opacity: 0.5; }
-  .chip-color { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-  .chip-info { flex: 1; }
-  .chip-name { color: var(--text); font-weight: 700; letter-spacing: 0.5px; }
-  .chip-dims { color: var(--text3); font-size: 10px; margin-top: 1px; }
-  .chip-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.1s; }
+  .chip-color { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+  .chip-info { flex: 1; min-width: 0; }
+  .chip-name { color: var(--text); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip-dims { color: var(--text3); font-size: 9px; margin-top: 1px; }
+  .chip-actions { display: flex; gap: 3px; opacity: 0; }
   .item-chip:hover .chip-actions { opacity: 1; }
-  .chip-btn { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 12px; padding: 2px 4px; border-radius: 2px; }
+  .chip-btn { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 11px; padding: 2px 4px; border-radius: 2px; }
   .chip-btn:hover { color: var(--text); background: var(--border); }
   .chip-btn.del:hover { color: #c45a5a; }
 
-  .canvas-wrap { flex: 1; overflow: auto; padding: 24px; background: var(--bg); position: relative; }
+  .canvas-wrap { flex: 1; overflow: auto; padding: 20px; background: var(--bg); }
   .canvas-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
-  .canvas-wrap::-webkit-scrollbar-track { background: transparent; }
   .canvas-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-  .truck-outer {
-    position: relative; margin: 0 auto;
-    background: var(--truck-wall); border-radius: 10px;
-    border: 2px solid #4a4a46;
-  }
-  .truck-label {
-    text-align: center; font-size: 10px; letter-spacing: 2px;
-    color: var(--text3); text-transform: uppercase; padding: 4px 0;
-  }
-  .attic {
-    margin: 0 14px; background: #383835; border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 2px;
-  }
+  .truck-outer { position: relative; margin: 0 auto; background: var(--truck-wall); border-radius: 10px; border: 2px solid #4a4a46; display: inline-block; }
+  .truck-label { text-align: center; font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; padding: 5px 0 3px; }
+  .dim-top { text-align: center; font-size: 9px; color: var(--text3); padding: 1px 0 3px; }
+  .attic { margin: 0 14px; background: #383835; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1px; }
   .attic-label { font-size: 10px; letter-spacing: 1.5px; color: var(--text2); text-transform: uppercase; font-weight: 700; }
   .attic-sub { font-size: 9px; color: var(--text3); }
-  .cab-wall {
-    margin: 4px 14px 0; height: 8px; background: #4a4a46; border-radius: 2px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .cab-wall-label { font-size: 7px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; }
-
+  .cab-wall { margin: 3px 14px 0; height: 8px; background: #4a4a46; border-radius: 2px; display: flex; align-items: center; justify-content: center; }
+  .cab-label { font-size: 7px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; }
   .floor-wrap { margin: 2px 14px; position: relative; }
-  #floor {
-    position: relative; background: var(--floor);
-    border-radius: 3px; overflow: hidden;
-  }
-  .floor-grid {
-    position: absolute; inset: 0; pointer-events: none;
-    background-image:
-      linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
-  }
-  .floor-ft-marker {
-    position: absolute; left: 0; right: 0; height: 1px;
-    background: rgba(0,0,0,0.12); pointer-events: none;
-  }
-  .floor-ft-label {
-    position: absolute; left: 2px; font-size: 8px; color: rgba(0,0,0,0.3);
-    font-family: 'Courier New', monospace; pointer-events: none; line-height: 1;
-  }
-
-  .door-wall {
-    margin: 0 14px 4px; height: 8px; background: #4a4a46; border-radius: 2px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .door-wall-label { font-size: 7px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
-
-  .dim-label {
-    text-align: center; font-size: 10px; color: var(--text3); font-family: 'Courier New', monospace;
-    padding: 3px 0;
-  }
-  .dim-side {
-    position: absolute; right: -36px; top: 0; bottom: 0;
-    display: flex; align-items: center; justify-content: center;
-    width: 34px;
-  }
-  .dim-side-text {
-    font-size: 9px; color: var(--text3); font-family: 'Courier New', monospace;
-    transform: rotate(90deg); white-space: nowrap;
-  }
-
-  .floor-item {
-    position: absolute; border-radius: 3px; cursor: grab;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; user-select: none; transition: box-shadow 0.1s, opacity 0.1s;
-    border: 1.5px solid rgba(0,0,0,0.3);
-    overflow: hidden;
-  }
+  #floor { position: relative; background: var(--floor); border-radius: 3px; overflow: hidden; }
+  .floor-grid { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(0,0,0,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.07) 1px, transparent 1px); }
+  .ft-marker { position: absolute; left: 0; right: 0; height: 1px; background: rgba(0,0,0,0.13); pointer-events: none; }
+  .ft-label { position: absolute; left: 2px; font-size: 8px; color: rgba(0,0,0,0.28); font-family: 'Courier New', monospace; pointer-events: none; line-height: 1; }
+  .door-wall { margin: 0 14px 4px; height: 8px; background: #4a4a46; border-radius: 2px; display: flex; align-items: center; justify-content: center; }
+  .door-label { font-size: 7px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
+  .dim-side { position: absolute; right: -40px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; width: 38px; }
+  .dim-side-text { font-size: 9px; color: var(--text3); font-family: 'Courier New', monospace; transform: rotate(90deg); white-space: nowrap; }
+  .floor-item { position: absolute; border-radius: 3px; cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; user-select: none; border: 1.5px solid rgba(0,0,0,0.3); overflow: hidden; transition: box-shadow 0.1s; }
   .floor-item:active { cursor: grabbing; }
-  .floor-item.dragging { opacity: 0.85; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 1000; cursor: grabbing; }
-  .floor-item.selected { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .floor-item.wall-item { cursor: default; opacity: 0.6; }
-  .item-name { font-size: 9px; font-weight: 700; font-family: 'Courier New', monospace; color: white; line-height: 1.2; padding: 0 2px; }
-  .item-dims { font-size: 8px; font-family: 'Courier New', monospace; color: rgba(255,255,255,0.7); line-height: 1.2; }
+  .floor-item.dragging { opacity: 0.88; box-shadow: 0 8px 28px rgba(0,0,0,0.55); z-index: 1000; cursor: grabbing; }
+  .floor-item.selected { outline: 2px solid var(--accent); outline-offset: 1px; z-index: 500; }
+  .floor-item.wall-item { cursor: default; opacity: 0.55; }
+  .item-name { font-size: 9px; font-weight: 700; font-family: 'Courier New', monospace; color: white; line-height: 1.2; padding: 0 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+  .item-dim { font-size: 8px; font-family: 'Courier New', monospace; color: rgba(255,255,255,0.7); line-height: 1.2; }
 
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2000;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .modal {
-    background: var(--surface); border: 1px solid var(--border2);
-    border-radius: 8px; padding: 24px; width: 340px; max-width: 90vw;
-  }
-  .modal h3 { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; }
-  .field { margin-bottom: 14px; }
-  .field label { display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--text3); text-transform: uppercase; margin-bottom: 6px; }
-  .field input, .field select {
-    width: 100%; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--border2);
-    border-radius: 4px; color: var(--text); font-family: inherit; font-size: 12px;
-  }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; padding: 22px; width: 320px; max-width: 92vw; }
+  .modal h3 { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--text3); text-transform: uppercase; margin-bottom: 5px; }
+  .field input, .field select { width: 100%; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 4px; color: var(--text); font-family: inherit; font-size: 12px; }
   .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .color-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-  .color-swatch {
-    width: 24px; height: 24px; border-radius: 3px; cursor: pointer;
-    border: 2px solid transparent; transition: border-color 0.1s;
-  }
-  .color-swatch.selected { border-color: white; }
-  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
-
-  .toast {
-    position: fixed; bottom: 20px; right: 20px; background: var(--surface2);
-    border: 1px solid var(--border2); border-radius: 4px; padding: 10px 16px;
-    font-size: 11px; color: var(--text2); z-index: 3000; opacity: 0;
-    transition: opacity 0.2s; pointer-events: none; letter-spacing: 0.5px;
-  }
+  .color-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  .color-swatch { width: 22px; height: 22px; border-radius: 3px; cursor: pointer; border: 2px solid transparent; transition: border-color 0.1s; }
+  .color-swatch.sel { border-color: white; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .toast { position: fixed; bottom: 18px; right: 18px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 4px; padding: 9px 14px; font-size: 11px; color: var(--text2); z-index: 3000; opacity: 0; transition: opacity 0.2s; pointer-events: none; letter-spacing: 0.5px; }
   .toast.show { opacity: 1; }
-
-  .snap-toggle { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text3); }
-  .toggle-input { appearance: none; width: 28px; height: 14px; background: var(--border); border-radius: 7px; cursor: pointer; position: relative; transition: background 0.2s; }
-  .toggle-input:checked { background: var(--accent); }
-  .toggle-input::after { content: ''; position: absolute; width: 10px; height: 10px; border-radius: 50%; background: white; top: 2px; left: 2px; transition: transform 0.2s; }
-  .toggle-input:checked::after { transform: translateX(14px); }
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">U-Haul <span>/ Load Planner</span></div>
-  <div class="header-actions">
+  <div class="header-right">
+    <span class="sync-status" id="syncStatus">Connecting...</span>
     <label class="snap-toggle">
       <input type="checkbox" class="toggle-input" id="snapToggle" checked>
-      Snap to grid
+      Snap
     </label>
-    <button class="btn" onclick="openModal()">+ Add item</button>
-    <button class="btn" onclick="resetLayout()">Reset layout</button>
+    <button class="btn primary" onclick="openModal()">+ Add item</button>
+    <button class="btn" onclick="resetLayout()">Reset</button>
   </div>
 </header>
 
@@ -224,31 +131,31 @@
   <div class="sidebar">
     <div class="sidebar-section">
       <div class="sidebar-label">Floor usage</div>
-      <div class="stat-row"><span class="stat-key">Total floor</span><span class="stat-val">190 sq ft</span></div>
-      <div class="stat-row"><span class="stat-key">Items placed</span><span class="stat-val" id="statUsed">— sq ft</span></div>
-      <div class="stat-row"><span class="stat-key">Remaining</span><span class="stat-val good" id="statFree">— sq ft</span></div>
+      <div class="stat-row"><span class="stat-key">Total</span><span class="stat-val">190 sq ft</span></div>
+      <div class="stat-row"><span class="stat-key">Used</span><span class="stat-val" id="statUsed">—</span></div>
+      <div class="stat-row"><span class="stat-key">Free</span><span class="stat-val good" id="statFree">—</span></div>
       <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-label">Items <span style="color:var(--text3);font-size:9px">(click to select)</span></div>
+      <div class="sidebar-label">Items <span style="font-size:9px;color:var(--text3)">(dbl-click to edit)</span></div>
     </div>
     <div class="item-list" id="itemList"></div>
   </div>
 
   <div class="canvas-wrap">
-    <div class="truck-outer" id="truckOuter">
-      <div class="truck-label">26' U-Haul — overhead view (cab front)</div>
-      <div class="dim-label" id="widthLabel">8'1" (97")</div>
+    <div class="truck-outer">
+      <div class="truck-label">26' U-Haul — overhead (cab front · door rear)</div>
+      <div class="dim-top">8'1" wide</div>
       <div class="attic" id="atticEl">
         <div class="attic-label">Mom's Attic</div>
-        <div class="attic-sub">2'7" × 8'1" — TVs, fragile boxes</div>
+        <div class="attic-sub">2'7" × 8'1" — TVs · fragile boxes</div>
       </div>
-      <div class="cab-wall"><div class="cab-wall-label">cab wall — load first</div></div>
-      <div class="floor-wrap" id="floorWrap">
+      <div class="cab-wall"><div class="cab-label">cab wall — load first</div></div>
+      <div class="floor-wrap">
         <div id="floor"></div>
-        <div class="dim-side" id="dimSide"><div class="dim-side-text" id="heightLabel">23'6"</div></div>
+        <div class="dim-side"><div class="dim-side-text">23'6" main floor</div></div>
       </div>
-      <div class="door-wall"><div class="door-wall-label">rear door — load last / unload first</div></div>
+      <div class="door-wall"><div class="door-label">rear door — load last / unload first</div></div>
     </div>
   </div>
 </div>
@@ -258,39 +165,23 @@
     <h3 id="modalTitle">Add item</h3>
     <div class="field">
       <label>Name</label>
-      <input type="text" id="itemName" placeholder="e.g. Dresser">
+      <input type="text" id="iName" placeholder="e.g. Dresser" maxlength="30">
     </div>
     <div class="field field-row">
-      <div>
-        <label>Width (inches)</label>
-        <input type="number" id="itemW" placeholder="36" min="6" max="120">
-      </div>
-      <div>
-        <label>Depth (inches)</label>
-        <input type="number" id="itemD" placeholder="24" min="6" max="120">
-      </div>
+      <div><label>Width (in)</label><input type="number" id="iW" placeholder="36" min="4" max="200"></div>
+      <div><label>Depth (in)</label><input type="number" id="iD" placeholder="24" min="4" max="200"></div>
     </div>
     <div class="field">
-      <label>Category</label>
-      <select id="itemCat">
-        <option value="furniture">Furniture</option>
-        <option value="appliance">Appliance / equipment</option>
-        <option value="storage">Storage / boxes</option>
-        <option value="tool">Tools / workbench</option>
-        <option value="other">Other</option>
-      </select>
+      <label>Notes</label>
+      <input type="text" id="iNotes" placeholder="optional" maxlength="60">
     </div>
     <div class="field">
       <label>Color</label>
       <div class="color-grid" id="colorGrid"></div>
     </div>
-    <div class="field">
-      <label>Notes (optional)</label>
-      <input type="text" id="itemNotes" placeholder="e.g. heavy, load first">
-    </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn danger" id="deleteBtn" style="display:none" onclick="deleteItem()">Delete</button>
+      <button class="btn danger" id="delBtn" style="display:none" onclick="deleteItem()">Delete</button>
       <button class="btn primary" onclick="saveItem()">Save</button>
     </div>
   </div>
@@ -299,151 +190,129 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const COLORS = [
-  '#633806','#854F0B','#26215C','#185FA5','#0F6E56',
-  '#5f5e5a','#444441','#993C1D','#3C3489','#085041',
-  '#7a2020','#1a5a3a','#4a3a80','#805020','#2a6080'
-];
+const SUPABASE_URL = 'https://vqfyaoanqpbcpbwtetcz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_BQR3QmatKdMWtwIirlA5Dw_DLfiEOY9';
+const LAYOUT_ID = 'uhaul-main';
+const SCALE = 34;
+const FLOOR_W = 97;
+const FLOOR_L = 282;
+const SNAP = SCALE / 3;
+const COLORS = ['#633806','#854F0B','#26215C','#185FA5','#0F6E56','#5f5e5a','#444441','#993C1D','#3C3489','#7a2020','#1a5a3a','#4a3a80','#805020','#2a6080','#606020'];
 
-const SCALE = 34; // px per foot
-const FLOOR_W_IN = 97; // 8'1" in inches
-const FLOOR_L_IN = 282; // 23'6" in inches
-const SNAP_PX = SCALE / 3; // ~11px snap grid
-
-let items = [];
-let selectedId = null;
-let editingId = null;
-let selectedColor = COLORS[0];
-let snapEnabled = true;
-let dragState = null;
-let saveTimer = null;
-
+let items = [], selectedId = null, editingId = null, selColor = COLORS[0], snapOn = true, saveTimer = null, dragState = null;
 const floor = document.getElementById('floor');
+const syncEl = document.getElementById('syncStatus');
 
-function inToPx(inches) { return (inches / 12) * SCALE; }
-function pxToIn(px) { return Math.round((px / SCALE) * 12); }
-function sqFt(wIn, dIn) { return (wIn * dIn) / 144; }
+const p = i => (i / 12) * SCALE;
+const sqft = (w, d) => (w * d) / 144;
+const uid = () => Math.random().toString(36).slice(2, 9);
 
-function initSize() {
-  const floorPxW = inToPx(FLOOR_W_IN);
-  const floorPxL = inToPx(FLOOR_L_IN);
-  floor.style.width = floorPxW + 'px';
-  floor.style.height = floorPxL + 'px';
+function setSync(cls, msg) { syncEl.className = 'sync-status ' + cls; syncEl.textContent = msg; }
 
-  const attic = document.getElementById('atticEl');
-  attic.style.height = inToPx(31) + 'px';
-  attic.style.width = floorPxW + 'px';
-  attic.style.marginLeft = '14px';
-
-  document.getElementById('truckOuter').style.width = (floorPxW + 28 + 50) + 'px';
-
-  const grid = document.createElement('div');
-  grid.className = 'floor-grid';
-  grid.style.backgroundSize = `${SCALE}px ${SCALE}px`;
-  floor.appendChild(grid);
-
-  for (let ft = 1; ft < 23; ft++) {
-    const y = ft * SCALE;
-    const marker = document.createElement('div');
-    marker.className = 'floor-ft-marker';
-    marker.style.top = y + 'px';
-    floor.appendChild(marker);
-    const lbl = document.createElement('div');
-    lbl.className = 'floor-ft-label';
-    lbl.style.top = (y + 2) + 'px';
-    lbl.textContent = ft + "'";
-    floor.appendChild(lbl);
-  }
+async function apiFetch(method, body) {
+  return fetch(`${SUPABASE_URL}/rest/v1/layouts?id=eq.${LAYOUT_ID}`, {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates' : 'return=minimal'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
 }
-
-function defaultItems() {
-  return [
-    { id: uid(), name: 'Futon (lean)', wIn: 72, dIn: 4, color: '#888780', cat: 'furniture', notes: 'lean against left wall', x: 0, y: 0, placed: true, wall: true },
-    { id: uid(), name: 'Leslie speaker', wIn: 22, dIn: 29, color: '#633806', cat: 'appliance', notes: '1.8\'×2.4\'', x: inToPx(4), y: inToPx(2), placed: true },
-    { id: uid(), name: 'Highboy', wIn: 36, dIn: 22, color: '#444441', cat: 'furniture', notes: '36"×22"', x: inToPx(24), y: inToPx(2), placed: true },
-    { id: uid(), name: 'Dresser', wIn: 40, dIn: 18, color: '#5f5e5a', cat: 'furniture', notes: '39.5"×18"', x: inToPx(4), y: inToPx(32), placed: true },
-    { id: uid(), name: 'Husky cabinet', wIn: 36, dIn: 18, color: '#3a3a38', cat: 'furniture', notes: '36"×18"', x: inToPx(44), y: inToPx(32), placed: true },
-    { id: uid(), name: 'Bookshelf', wIn: 48, dIn: 12, color: '#185FA5', cat: 'furniture', notes: '48"×12"', x: inToPx(4), y: inToPx(52), placed: true },
-    { id: uid(), name: 'Workbench', wIn: 20, dIn: 68, color: '#888780', cat: 'tool', notes: '20"×68"', x: inToPx(73), y: inToPx(2), placed: true },
-    { id: uid(), name: 'Stereo cabinet', wIn: 55, dIn: 18, color: '#26215C', cat: 'furniture', notes: '55"×18"', x: inToPx(4), y: inToPx(68), placed: true },
-    { id: uid(), name: 'Blanket chest', wIn: 24, dIn: 48, color: '#854F0B', cat: 'storage', notes: '24"×48"', x: inToPx(4), y: inToPx(88), placed: true },
-    { id: uid(), name: 'BR table', wIn: 24, dIn: 42, color: '#0F6E56', cat: 'furniture', notes: '24"×42"', x: inToPx(30), y: inToPx(88), placed: true },
-    { id: uid(), name: 'Coffee table', wIn: 24, dIn: 42, color: '#0F6E56', cat: 'furniture', notes: '24"×42"', x: inToPx(56), y: inToPx(88), placed: true },
-    { id: uid(), name: 'TV table', wIn: 18, dIn: 30, color: '#185FA5', cat: 'furniture', notes: '18"×30"', x: inToPx(4), y: inToPx(148), placed: true },
-    { id: uid(), name: 'Tool bench', wIn: 18, dIn: 48, color: '#633806', cat: 'tool', notes: '18"×48"', x: inToPx(24), y: inToPx(148), placed: true },
-    { id: uid(), name: 'Bin 1', wIn: 20, dIn: 30, color: '#0C447C', cat: 'storage', notes: '20"×30"', x: inToPx(4), y: inToPx(202), placed: true },
-    { id: uid(), name: 'Bin 2', wIn: 20, dIn: 30, color: '#0C447C', cat: 'storage', notes: '20"×30"', x: inToPx(26), y: inToPx(202), placed: true },
-    { id: uid(), name: 'Bin 3', wIn: 20, dIn: 30, color: '#0C447C', cat: 'storage', notes: '20"×30"', x: inToPx(48), y: inToPx(202), placed: true },
-    { id: uid(), name: 'Boxes (kitchen)', wIn: 24, dIn: 24, color: '#5f5e5a', cat: 'storage', notes: 'kitchen boxes', x: inToPx(70), y: inToPx(202), placed: true },
-  ];
-}
-
-function uid() { return Math.random().toString(36).slice(2, 9); }
 
 async function load() {
+  setSync('saving', 'Loading...');
   try {
-    const r = await window.storage.get('uhaul-items');
-    if (r && r.value) {
-      items = JSON.parse(r.value);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/layouts?id=eq.${LAYOUT_ID}&select=data`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    const rows = await res.json();
+    if (rows && rows.length && rows[0].data && rows[0].data.items && rows[0].data.items.length) {
+      items = rows[0].data.items;
+      setSync('saved', 'Synced');
     } else {
       items = defaultItems();
+      await save();
     }
   } catch(e) {
+    setSync('error', 'Offline');
     items = defaultItems();
   }
   render();
 }
 
-function scheduleSave() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => {
-    try {
-      await window.storage.set('uhaul-items', JSON.stringify(items));
-      showToast('Saved');
-    } catch(e) { showToast('Save failed'); }
-  }, 800);
+async function save() {
+  setSync('saving', 'Saving...');
+  try {
+    const res = await apiFetch('POST', { id: LAYOUT_ID, data: { items }, updated_at: new Date().toISOString() });
+    if (res.ok) { setSync('saved', 'Saved'); }
+    else { setSync('error', 'Save failed'); console.error(await res.text()); }
+  } catch(e) { setSync('error', 'Save failed'); }
 }
 
-async function resetLayout() {
-  if (!confirm('Reset to default layout? This cannot be undone.')) return;
-  items = defaultItems();
-  selectedId = null;
-  render();
-  try { await window.storage.set('uhaul-items', JSON.stringify(items)); } catch(e){}
-  showToast('Layout reset');
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  setSync('saving', 'Saving...');
+  saveTimer = setTimeout(save, 900);
+}
+
+function defaultItems() {
+  return [
+    { id: uid(), name: 'Futon (lean)', wIn: 72, dIn: 4, color: '#888780', notes: 'lean left wall', x: 0, y: 0, wall: true },
+    { id: uid(), name: 'Leslie speaker', wIn: 22, dIn: 29, color: '#633806', notes: "1.8'x2.4'", x: p(4), y: p(2) },
+    { id: uid(), name: 'Highboy', wIn: 36, dIn: 22, color: '#444441', notes: '36x22', x: p(26), y: p(2) },
+    { id: uid(), name: 'Dresser', wIn: 40, dIn: 18, color: '#5f5e5a', notes: '39.5x18', x: p(4), y: p(33) },
+    { id: uid(), name: 'Husky cabinet', wIn: 36, dIn: 18, color: '#3a3a38', notes: '36x18', x: p(47), y: p(33) },
+    { id: uid(), name: 'Bookshelf', wIn: 48, dIn: 12, color: '#185FA5', notes: '48x12', x: p(4), y: p(53) },
+    { id: uid(), name: 'Workbench', wIn: 20, dIn: 68, color: '#888780', notes: '20x68', x: p(73), y: p(2) },
+    { id: uid(), name: 'Stereo cabinet', wIn: 55, dIn: 18, color: '#26215C', notes: '55x18', x: p(4), y: p(68) },
+    { id: uid(), name: 'Blanket chest', wIn: 24, dIn: 48, color: '#854F0B', notes: '24x48', x: p(4), y: p(89) },
+    { id: uid(), name: 'BR table', wIn: 24, dIn: 42, color: '#0F6E56', notes: '24x42', x: p(30), y: p(89) },
+    { id: uid(), name: 'Coffee table', wIn: 24, dIn: 42, color: '#0F6E56', notes: '24x42', x: p(56), y: p(89) },
+    { id: uid(), name: 'TV table', wIn: 18, dIn: 30, color: '#185FA5', notes: '18x30', x: p(4), y: p(149) },
+    { id: uid(), name: 'Tool bench', wIn: 18, dIn: 48, color: '#633806', notes: '18x48', x: p(25), y: p(149) },
+    { id: uid(), name: 'Bin 1', wIn: 20, dIn: 30, color: '#0C447C', notes: '20x30', x: p(4), y: p(205) },
+    { id: uid(), name: 'Bin 2', wIn: 20, dIn: 30, color: '#0C447C', notes: '20x30', x: p(26), y: p(205) },
+    { id: uid(), name: 'Bin 3', wIn: 20, dIn: 30, color: '#0C447C', notes: '20x30', x: p(48), y: p(205) },
+    { id: uid(), name: 'Boxes (kitchen)', wIn: 24, dIn: 24, color: '#5f5e5a', notes: 'kitchen', x: p(70), y: p(205) },
+  ];
+}
+
+function initFloor() {
+  const fw = p(FLOOR_W), fl = p(FLOOR_L);
+  floor.style.width = fw + 'px';
+  floor.style.height = fl + 'px';
+  document.getElementById('atticEl').style.height = p(31) + 'px';
+  const g = document.createElement('div');
+  g.className = 'floor-grid';
+  g.style.backgroundSize = `${SCALE}px ${SCALE}px`;
+  floor.appendChild(g);
+  for (let f = 1; f < 23; f++) {
+    const y = f * SCALE;
+    const m = document.createElement('div'); m.className = 'ft-marker'; m.style.top = y + 'px'; floor.appendChild(m);
+    const l = document.createElement('div'); l.className = 'ft-label'; l.style.top = (y+2) + 'px'; l.textContent = f + "'"; floor.appendChild(l);
+  }
 }
 
 function render() {
   floor.querySelectorAll('.floor-item').forEach(e => e.remove());
   items.forEach(item => {
-    if (!item.placed) return;
     const el = document.createElement('div');
     el.className = 'floor-item' + (item.wall ? ' wall-item' : '') + (item.id === selectedId ? ' selected' : '');
     el.dataset.id = item.id;
-    const pw = inToPx(item.wIn);
-    const ph = inToPx(item.dIn);
+    const pw = p(item.wIn), ph = p(item.dIn);
     el.style.cssText = `left:${item.x}px;top:${item.y}px;width:${pw}px;height:${ph}px;background:${item.color};`;
-
-    const name = document.createElement('div');
-    name.className = 'item-name';
-    name.textContent = item.name;
-    el.appendChild(name);
-
-    if (ph > 30) {
-      const dims = document.createElement('div');
-      dims.className = 'item-dims';
-      dims.textContent = item.wIn + '"×' + item.dIn + '"';
-      el.appendChild(dims);
-    }
-
+    const n = document.createElement('div'); n.className = 'item-name'; n.textContent = item.name; el.appendChild(n);
+    if (ph > 28) { const d = document.createElement('div'); d.className = 'item-dim'; d.textContent = item.wIn+'"x'+item.dIn+'"'; el.appendChild(d); }
     if (!item.wall) {
       el.addEventListener('mousedown', startDrag);
-      el.addEventListener('click', (e) => { e.stopPropagation(); selectItem(item.id); });
-      el.addEventListener('dblclick', (e) => { e.stopPropagation(); openModal(item.id); });
+      el.addEventListener('click', e => { e.stopPropagation(); selectItem(item.id); });
+      el.addEventListener('dblclick', e => { e.stopPropagation(); openModal(item.id); });
     }
     floor.appendChild(el);
   });
-
   renderSidebar();
   updateStats();
 }
@@ -452,40 +321,26 @@ function renderSidebar() {
   const list = document.getElementById('itemList');
   list.innerHTML = '';
   items.forEach(item => {
-    const chip = document.createElement('div');
-    chip.className = 'item-chip' + (item.id === selectedId ? ' selected' : '') + (item.placed ? ' on-floor' : '');
-    chip.innerHTML = `
-      <div class="chip-color" style="background:${item.color}"></div>
-      <div class="chip-info">
-        <div class="chip-name">${item.name}</div>
-        <div class="chip-dims">${item.wIn}"×${item.dIn}" · ${sqFt(item.wIn,item.dIn).toFixed(1)} sq ft</div>
-      </div>
-      <div class="chip-actions">
-        <button class="chip-btn" onclick="openModal('${item.id}');event.stopPropagation()">✎</button>
-        <button class="chip-btn del" onclick="confirmDelete('${item.id}');event.stopPropagation()">✕</button>
-      </div>`;
-    chip.addEventListener('click', () => selectItem(item.id));
-    list.appendChild(chip);
+    const c = document.createElement('div');
+    c.className = 'item-chip' + (item.id === selectedId ? ' selected' : '');
+    c.innerHTML = `<div class="chip-color" style="background:${item.color}"></div><div class="chip-info"><div class="chip-name">${item.name}</div><div class="chip-dims">${item.wIn}"x${item.dIn}" · ${sqft(item.wIn,item.dIn).toFixed(1)} sqft</div></div><div class="chip-actions"><button class="chip-btn" onclick="openModal('${item.id}');event.stopPropagation()">✎</button><button class="chip-btn del" onclick="confirmDelete('${item.id}');event.stopPropagation()">✕</button></div>`;
+    c.addEventListener('click', () => selectItem(item.id));
+    list.appendChild(c);
   });
 }
 
 function updateStats() {
-  const used = items.filter(i => i.placed && !i.wall).reduce((s, i) => s + sqFt(i.wIn, i.dIn), 0);
-  const total = 190;
-  const free = total - used;
-  const pct = Math.min(100, (used / total) * 100);
+  const used = items.filter(i => !i.wall).reduce((s,i) => s + sqft(i.wIn,i.dIn), 0);
+  const free = 190 - used;
+  const pct = Math.min(100, (used/190)*100);
   document.getElementById('statUsed').textContent = used.toFixed(1) + ' sq ft';
-  const freeEl = document.getElementById('statFree');
-  freeEl.textContent = free.toFixed(1) + ' sq ft';
-  freeEl.className = 'stat-val ' + (pct > 85 ? 'warn' : 'good');
+  const fEl = document.getElementById('statFree');
+  fEl.textContent = free.toFixed(1) + ' sq ft';
+  fEl.className = 'stat-val ' + (pct > 85 ? 'warn' : 'good');
   document.getElementById('progressFill').style.width = pct + '%';
 }
 
-function selectItem(id) {
-  selectedId = (selectedId === id) ? null : id;
-  render();
-}
-
+function selectItem(id) { selectedId = selectedId === id ? null : id; render(); }
 floor.addEventListener('click', () => { selectedId = null; render(); });
 
 function startDrag(e) {
@@ -495,167 +350,105 @@ function startDrag(e) {
   const id = el.dataset.id;
   const item = items.find(i => i.id === id);
   if (!item) return;
-
   const rect = floor.getBoundingClientRect();
-  const offsetX = e.clientX - rect.left - item.x;
-  const offsetY = e.clientY - rect.top - item.y;
-
+  const ox = e.clientX - rect.left - item.x, oy = e.clientY - rect.top - item.y;
   el.classList.add('dragging');
   selectedId = id;
-
-  dragState = { id, el, offsetX, offsetY };
-
-  function onMove(e) {
+  dragState = { el, ox, oy, item };
+  const onMove = e => {
     if (!dragState) return;
-    const rect = floor.getBoundingClientRect();
-    let x = e.clientX - rect.left - dragState.offsetX;
-    let y = e.clientY - rect.top - dragState.offsetY;
-
-    const floorW = inToPx(FLOOR_W_IN);
-    const floorL = inToPx(FLOOR_L_IN);
-    const pw = inToPx(item.wIn);
-    const ph = inToPx(item.dIn);
-
-    x = Math.max(0, Math.min(floorW - pw, x));
-    y = Math.max(0, Math.min(floorL - ph, y));
-
-    if (snapEnabled) {
-      x = Math.round(x / SNAP_PX) * SNAP_PX;
-      y = Math.round(y / SNAP_PX) * SNAP_PX;
-    }
-
-    dragState.el.style.left = x + 'px';
-    dragState.el.style.top = y + 'px';
-    item.x = x;
-    item.y = y;
-  }
-
-  function onUp() {
+    const r = floor.getBoundingClientRect();
+    const fw = p(FLOOR_W), fl = p(FLOOR_L), pw = p(item.wIn), ph = p(item.dIn);
+    let x = Math.max(0, Math.min(fw-pw, e.clientX-r.left-dragState.ox));
+    let y = Math.max(0, Math.min(fl-ph, e.clientY-r.top-dragState.oy));
+    if (snapOn) { x = Math.round(x/SNAP)*SNAP; y = Math.round(y/SNAP)*SNAP; }
+    dragState.el.style.left = x+'px'; dragState.el.style.top = y+'px';
+    item.x = x; item.y = y;
+  };
+  const onUp = () => {
     if (!dragState) return;
     dragState.el.classList.remove('dragging');
-    dragState = null;
-    render();
-    scheduleSave();
+    dragState = null; render(); scheduleSave();
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onUp);
-  }
-
+  };
   document.addEventListener('mousemove', onMove);
   document.addEventListener('mouseup', onUp);
 }
 
 function buildColorGrid() {
-  const grid = document.getElementById('colorGrid');
-  grid.innerHTML = '';
+  const g = document.getElementById('colorGrid'); g.innerHTML = '';
   COLORS.forEach(c => {
-    const sw = document.createElement('div');
-    sw.className = 'color-swatch' + (c === selectedColor ? ' selected' : '');
-    sw.style.background = c;
-    sw.onclick = () => {
-      selectedColor = c;
-      grid.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-      sw.classList.add('selected');
-    };
-    grid.appendChild(sw);
+    const s = document.createElement('div');
+    s.className = 'color-swatch' + (c === selColor ? ' sel' : '');
+    s.style.background = c;
+    s.onclick = () => { selColor = c; buildColorGrid(); };
+    g.appendChild(s);
   });
 }
 
 function openModal(id) {
   editingId = id || null;
-  const modal = document.getElementById('modalOverlay');
-  const title = document.getElementById('modalTitle');
-  const del = document.getElementById('deleteBtn');
-
+  const del = document.getElementById('delBtn');
   if (editingId) {
     const item = items.find(i => i.id === editingId);
-    title.textContent = 'Edit item';
-    document.getElementById('itemName').value = item.name;
-    document.getElementById('itemW').value = item.wIn;
-    document.getElementById('itemD').value = item.dIn;
-    document.getElementById('itemCat').value = item.cat || 'furniture';
-    document.getElementById('itemNotes').value = item.notes || '';
-    selectedColor = item.color;
-    del.style.display = 'block';
+    document.getElementById('modalTitle').textContent = 'Edit item';
+    document.getElementById('iName').value = item.name;
+    document.getElementById('iW').value = item.wIn;
+    document.getElementById('iD').value = item.dIn;
+    document.getElementById('iNotes').value = item.notes || '';
+    selColor = item.color; del.style.display = 'block';
   } else {
-    title.textContent = 'Add item';
-    document.getElementById('itemName').value = '';
-    document.getElementById('itemW').value = '';
-    document.getElementById('itemD').value = '';
-    document.getElementById('itemCat').value = 'furniture';
-    document.getElementById('itemNotes').value = '';
-    selectedColor = COLORS[0];
-    del.style.display = 'none';
+    document.getElementById('modalTitle').textContent = 'Add item';
+    ['iName','iW','iD','iNotes'].forEach(id => document.getElementById(id).value = '');
+    selColor = COLORS[0]; del.style.display = 'none';
   }
   buildColorGrid();
-  modal.style.display = 'flex';
-  setTimeout(() => document.getElementById('itemName').focus(), 50);
+  document.getElementById('modalOverlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('iName').focus(), 50);
 }
 
-function closeModal() {
-  document.getElementById('modalOverlay').style.display = 'none';
-  editingId = null;
-}
+function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; editingId = null; }
 
 function saveItem() {
-  const name = document.getElementById('itemName').value.trim();
-  const wIn = parseInt(document.getElementById('itemW').value);
-  const dIn = parseInt(document.getElementById('itemD').value);
-  const cat = document.getElementById('itemCat').value;
-  const notes = document.getElementById('itemNotes').value.trim();
-
-  if (!name || !wIn || !dIn) { showToast('Fill in name and dimensions'); return; }
-
-  if (editingId) {
-    const item = items.find(i => i.id === editingId);
-    Object.assign(item, { name, wIn, dIn, cat, notes, color: selectedColor });
-  } else {
-    items.push({ id: uid(), name, wIn, dIn, cat, notes, color: selectedColor, x: 10, y: 10, placed: true });
-  }
-
-  closeModal();
-  render();
-  scheduleSave();
+  const name = document.getElementById('iName').value.trim();
+  const wIn = parseInt(document.getElementById('iW').value);
+  const dIn = parseInt(document.getElementById('iD').value);
+  const notes = document.getElementById('iNotes').value.trim();
+  if (!name || !wIn || !dIn) { showToast('Name and dimensions required'); return; }
+  if (editingId) { Object.assign(items.find(i => i.id === editingId), { name, wIn, dIn, notes, color: selColor }); }
+  else { items.push({ id: uid(), name, wIn, dIn, notes, color: selColor, x: 10, y: 10 }); }
+  closeModal(); render(); scheduleSave();
 }
 
 function confirmDelete(id) {
   const item = items.find(i => i.id === id);
-  if (!item) return;
-  if (!confirm('Delete "' + item.name + '"?')) return;
+  if (!item || !confirm('Delete "' + item.name + '"?')) return;
   items = items.filter(i => i.id !== id);
   if (selectedId === id) selectedId = null;
-  render();
-  scheduleSave();
+  render(); scheduleSave();
 }
 
-function deleteItem() {
-  if (!editingId) return;
-  closeModal();
-  confirmDelete(editingId);
+function deleteItem() { if (!editingId) return; closeModal(); confirmDelete(editingId); }
+
+async function resetLayout() {
+  if (!confirm('Reset to default layout? This will overwrite all changes.')) return;
+  items = defaultItems(); selectedId = null; render(); await save(); showToast('Layout reset');
 }
 
-document.getElementById('snapToggle').addEventListener('change', e => {
-  snapEnabled = e.target.checked;
-});
-
-document.getElementById('modalOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('modalOverlay')) closeModal();
-});
-
+document.getElementById('snapToggle').addEventListener('change', e => { snapOn = e.target.checked; });
+document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
-  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && document.getElementById('modalOverlay').style.display === 'none') {
-    confirmDelete(selectedId);
-  }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && document.getElementById('modalOverlay').style.display === 'none') confirmDelete(selectedId);
 });
 
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 1800);
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
 }
 
-initSize();
+initFloor();
 load();
 </script>
 </body>
