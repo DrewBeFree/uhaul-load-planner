@@ -42,7 +42,14 @@
   .toggle-input:checked::after { transform: translateX(14px); }
 
   .layout { display: flex; flex: 1; overflow: hidden; }
-  .sidebar { width: 230px; min-width: 230px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .sidebar { width: 230px; min-width: 230px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; transition: width 0.25s ease, min-width 0.25s ease; }
+  .sidebar.collapsed { width: 0; min-width: 0; border-right: none; }
+  .toggle-sidebar { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; font-size: 15px; padding: 0; flex-shrink: 0; }
+  .layout { position: relative; }
+  @media (max-width: 640px) {
+    .sidebar { position: absolute; z-index: 100; top: 0; bottom: 0; left: 0; }
+    .canvas-wrap { padding: 10px; }
+  }
   .sidebar-section { padding: 12px 14px; border-bottom: 1px solid var(--border); }
   .sidebar-label { font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 8px; }
   .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
@@ -115,7 +122,10 @@
 <body>
 
 <header>
-  <div class="logo">U-Haul <span>/ Load Planner</span></div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="btn toggle-sidebar" id="sidebarToggle" onclick="toggleSidebar()" title="Toggle panel">☰</button>
+    <div class="logo">U-Haul <span>/ Load Planner</span></div>
+  </div>
   <div class="header-right">
     <span class="sync-status" id="syncStatus">Connecting...</span>
     <label class="snap-toggle">
@@ -473,6 +483,12 @@ document.addEventListener('keydown', e => {
 function showToast(msg) {
   const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  sb.classList.toggle('collapsed');
+  document.getElementById('sidebarToggle').textContent = sb.classList.contains('collapsed') ? '▶' : '☰';
 }
 
 initFloor();
