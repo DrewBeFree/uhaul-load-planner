@@ -327,9 +327,17 @@ function render() {
       el.addEventListener('click', e => { e.stopPropagation(); selectItem(item.id); });
       el.addEventListener('dblclick', e => { e.stopPropagation(); openModal(item.id); });
       let lastTap = 0;
+      let tapStartX = 0, tapStartY = 0;
+      el.addEventListener('touchstart', e => {
+        tapStartX = e.touches[0].clientX;
+        tapStartY = e.touches[0].clientY;
+      }, { passive: true });
       el.addEventListener('touchend', e => {
+        const dx = Math.abs(e.changedTouches[0].clientX - tapStartX);
+        const dy = Math.abs(e.changedTouches[0].clientY - tapStartY);
+        if (dx > 8 || dy > 8) return; // was a drag, not a tap
         const now = Date.now();
-        if (now - lastTap < 300) { e.stopPropagation(); openModal(item.id); }
+        if (now - lastTap < 350) { e.stopPropagation(); e.preventDefault(); openModal(item.id); }
         lastTap = now;
       });
     }
