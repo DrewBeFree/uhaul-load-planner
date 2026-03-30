@@ -88,7 +88,7 @@
   .door-label { font-size: 7px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
   .dim-side { position: absolute; right: -40px; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; width: 38px; }
   .dim-side-text { font-size: 9px; color: var(--text3); font-family: 'Courier New', monospace; transform: rotate(90deg); white-space: nowrap; }
-  .floor-item { position: absolute; border-radius: 3px; cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; user-select: none; border: 1.5px solid rgba(0,0,0,0.3); overflow: hidden; transition: box-shadow 0.1s; }
+  .floor-item { position: absolute; border-radius: 3px; cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; user-select: none; border: 1.5px solid rgba(0,0,0,0.3); overflow: hidden; transition: box-shadow 0.1s; touch-action: none; }
   .floor-item:active { cursor: grabbing; }
   .floor-item.dragging { opacity: 0.88; box-shadow: 0 8px 28px rgba(0,0,0,0.55); z-index: 1000; cursor: grabbing; }
   .floor-item.selected { outline: 2px solid var(--accent); outline-offset: 1px; z-index: 500; }
@@ -209,25 +209,16 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 
 function setSync(cls, msg) { syncEl.className = 'sync-status ' + cls; syncEl.textContent = msg; }
 
-async function apiFetch(method, body) {
-  return fetch(`${SUPABASE_URL}/rest/v1/layouts?id=eq.${LAYOUT_ID}`, {
-    method,
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': method === 'POST' ? 'resolution=merge-duplicates' : 'return=minimal'
-    },
-    body: body ? JSON.stringify(body) : undefined
-  });
-}
+const HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_KEY,
+  'Content-Type': 'application/json'
+};
 
 async function load() {
   setSync('saving', 'Loading...');
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/layouts?id=eq.${LAYOUT_ID}&select=data`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-    });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/layouts?id=eq.${LAYOUT_ID}&select=data`, { headers: HEADERS });
     const rows = await res.json();
     if (rows && rows.length && rows[0].data && rows[0].data.items && rows[0].data.items.length) {
       items = rows[0].data.items;
@@ -246,10 +237,23 @@ async function load() {
 async function save() {
   setSync('saving', 'Saving...');
   try {
-    const res = await apiFetch('POST', { id: LAYOUT_ID, data: { items }, updated_at: new Date().toISOString() });
-    if (res.ok) { setSync('saved', 'Saved'); }
-    else { setSync('error', 'Save failed'); console.error(await res.text()); }
-  } catch(e) { setSync('error', 'Save failed'); }
+    const payload = { id: LAYOUT_ID, data: { items }, updated_at: new Date().toISOString() };
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/layouts`, {
+      method: 'POST',
+      headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      setSync('saved', 'Saved');
+    } else {
+      const txt = await res.text();
+      console.error('Save failed:', res.status, txt);
+      setSync('error', 'Save failed');
+    }
+  } catch(e) {
+    console.error('Save error:', e);
+    setSync('error', 'Save failed');
+  }
 }
 
 function scheduleSave() {
@@ -308,8 +312,15 @@ function render() {
     if (ph > 28) { const d = document.createElement('div'); d.className = 'item-dim'; d.textContent = item.wIn+'"x'+item.dIn+'"'; el.appendChild(d); }
     if (!item.wall) {
       el.addEventListener('mousedown', startDrag);
+      el.addEventListener('touchstart', startDrag, { passive: false });
       el.addEventListener('click', e => { e.stopPropagation(); selectItem(item.id); });
       el.addEventListener('dblclick', e => { e.stopPropagation(); openModal(item.id); });
+      let lastTap = 0;
+      el.addEventListener('touchend', e => {
+        const now = Date.now();
+        if (now - lastTap < 300) { e.stopPropagation(); openModal(item.id); }
+        lastTap = now;
+      });
     }
     floor.appendChild(el);
   });
@@ -343,37 +354,53 @@ function updateStats() {
 function selectItem(id) { selectedId = selectedId === id ? null : id; render(); }
 floor.addEventListener('click', () => { selectedId = null; render(); });
 
+function getClientXY(e) {
+  if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  if (e.changedTouches && e.changedTouches.length) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+  return { x: e.clientX, y: e.clientY };
+}
+
 function startDrag(e) {
-  if (e.button !== 0) return;
+  if (e.type === 'mousedown' && e.button !== 0) return;
   e.preventDefault();
   const el = e.currentTarget;
   const id = el.dataset.id;
   const item = items.find(i => i.id === id);
   if (!item) return;
+  const { x: cx, y: cy } = getClientXY(e);
   const rect = floor.getBoundingClientRect();
-  const ox = e.clientX - rect.left - item.x, oy = e.clientY - rect.top - item.y;
+  const ox = cx - rect.left - item.x, oy = cy - rect.top - item.y;
   el.classList.add('dragging');
   selectedId = id;
   dragState = { el, ox, oy, item };
+
   const onMove = e => {
     if (!dragState) return;
+    e.preventDefault();
     const r = floor.getBoundingClientRect();
+    const { x: cx, y: cy } = getClientXY(e);
     const fw = p(FLOOR_W), fl = p(FLOOR_L), pw = p(item.wIn), ph = p(item.dIn);
-    let x = Math.max(0, Math.min(fw-pw, e.clientX-r.left-dragState.ox));
-    let y = Math.max(0, Math.min(fl-ph, e.clientY-r.top-dragState.oy));
+    let x = Math.max(0, Math.min(fw-pw, cx-r.left-dragState.ox));
+    let y = Math.max(0, Math.min(fl-ph, cy-r.top-dragState.oy));
     if (snapOn) { x = Math.round(x/SNAP)*SNAP; y = Math.round(y/SNAP)*SNAP; }
     dragState.el.style.left = x+'px'; dragState.el.style.top = y+'px';
     item.x = x; item.y = y;
   };
-  const onUp = () => {
+
+  const onUp = e => {
     if (!dragState) return;
     dragState.el.classList.remove('dragging');
     dragState = null; render(); scheduleSave();
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onUp);
   };
-  document.addEventListener('mousemove', onMove);
+
+  document.addEventListener('mousemove', onMove, { passive: false });
   document.addEventListener('mouseup', onUp);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('touchend', onUp);
 }
 
 function buildColorGrid() {
