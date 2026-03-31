@@ -106,10 +106,13 @@
   .floor-item.selected { outline: 2px solid var(--accent); outline-offset: 1px; z-index: 500; }
   .floor-item.wall-item { cursor: default; opacity: 0.55; }
   .floor-item.attic-item { outline: 1px dashed rgba(255,255,255,0.3); }
-  .floor-item.stacked { opacity: 0.75; }
-  .floor-item.stacked::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.12) 4px, rgba(255,255,255,0.12) 5px); pointer-events: none; }
-  .stacked-badge { font-size: 7px; font-family: 'Courier New', monospace; color: rgba(255,255,255,0.8); letter-spacing: 1px; text-transform: uppercase; background: rgba(0,0,0,0.3); padding: 1px 3px; border-radius: 2px; margin-top: 2px; }
-  .chip-stacked { font-size: 8px; color: #6db87a; margin-left: 3px; }
+  .floor-item.stack-d1 { opacity: 0.82; }
+  .floor-item.stack-d1 .stack-overlay { background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.14) 5px, rgba(255,255,255,0.14) 6px); }
+  .floor-item.stack-d2 .stack-overlay { background: repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.18) 3px, rgba(255,255,255,0.18) 4px), repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,0.1) 3px, rgba(255,255,255,0.1) 4px); }
+  .floor-item.stack-d3 .stack-overlay { background: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.22) 2px, rgba(255,255,255,0.22) 3px), repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(255,255,255,0.14) 2px, rgba(255,255,255,0.14) 3px); }
+  .stack-overlay { position: absolute; inset: 0; pointer-events: none; }
+  .stack-badge { position: absolute; top: 2px; right: 2px; font-size: 7px; font-family: 'Courier New', monospace; color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.45); padding: 1px 3px; border-radius: 2px; line-height: 1.4; pointer-events: none; }
+  .chip-stacked { font-size: 8px; color: #e8a840; margin-left: 3px; }
   .item-name { font-size: 9px; font-weight: 700; font-family: 'Courier New', monospace; color: white; line-height: 1.2; padding: 0 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
   .item-dim { font-size: 8px; font-family: 'Courier New', monospace; color: rgba(255,255,255,0.7); line-height: 1.2; }
 
@@ -209,10 +212,7 @@
       <label>Notes</label>
       <input type="text" id="iNotes" placeholder="optional" maxlength="60">
     </div>
-    <div class="field" style="display:flex;align-items:center;gap:10px;">
-      <input type="checkbox" id="iStacked" style="width:auto;accent-color:var(--accent);">
-      <label for="iStacked" style="margin:0;font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;cursor:pointer;">Stacked on another item (exclude from sq ft)</label>
-    </div>
+
     <div class="field">
       <label>Color</label>
       <div class="color-grid" id="colorGrid"></div>
@@ -416,14 +416,13 @@ function render() {
     el.className = 'floor-item'
       + (item.wall ? ' wall-item' : '')
       + (item.id === selectedId ? ' selected' : '')
-      + (zone === 'attic' ? ' attic-item' : '')
-      + (item.stacked ? ' stacked' : '');
+      + (zone === 'attic' ? ' attic-item' : '');
     el.dataset.id = item.id;
     const pw = p(item.wIn), ph = p(item.dIn);
     el.style.cssText = `left:${item.x}px;top:${item.y}px;width:${pw}px;height:${ph}px;background:${item.color};`;
     const n = document.createElement('div'); n.className = 'item-name'; n.textContent = item.name; el.appendChild(n);
     if (ph > 26) { const d = document.createElement('div'); d.className = 'item-dim'; d.textContent = item.wIn+'"x'+item.dIn+'"'; el.appendChild(d); }
-    if (item.stacked && ph > 38) { const sb = document.createElement('div'); sb.className = 'stacked-badge'; sb.textContent = '↑ stacked'; el.appendChild(sb); }
+    const stackOv = document.createElement('div'); stackOv.className = 'stack-overlay'; el.appendChild(stackOv);
     if (!item.wall) {
       el.addEventListener('mousedown', startDrag);
       el.addEventListener('touchstart', startDrag, { passive: false });
@@ -453,7 +452,7 @@ function renderSidebar() {
     c.innerHTML = `<div class="chip-color" style="background:${item.color}"></div>
       <div class="chip-info">
         <div class="chip-name">${item.name}</div>
-        <div class="chip-dims">${item.wIn}"x${item.dIn}" · ${item.stacked ? '—' : sqft(item.wIn,item.dIn).toFixed(1)+' sqft'}${zone==='attic'?' <span class="chip-zone">ATTIC</span>':''}${item.stacked?' <span class="chip-stacked">↑ stacked</span>':''}</div>
+        <div class="chip-dims" id="chipdims-${item.id}">${item.wIn}"x${item.dIn}" · ${sqft(item.wIn,item.dIn).toFixed(1)} sqft${zone==='attic'?' <span class="chip-zone">ATTIC</span>':''}</div>
       </div>
       <div class="chip-actions">
         <button class="chip-btn" onclick="openModal('${item.id}');event.stopPropagation()">✎</button>
@@ -464,15 +463,86 @@ function renderSidebar() {
   });
 }
 
+// Compute overlap depth for every item in a zone.
+// Returns Map<itemId, stackDepth> where stackDepth = how many OTHER items sit beneath this one.
+function computeStackDepths(zoneItems) {
+  const depths = new Map();
+  zoneItems.forEach(item => depths.set(item.id, 0));
+  // For each pair, check overlap. The item later in the list sits on top.
+  for (let i = 0; i < zoneItems.length; i++) {
+    for (let j = i + 1; j < zoneItems.length; j++) {
+      const a = zoneItems[i], b = zoneItems[j];
+      const ax1 = a.x, ax2 = a.x + p(a.wIn), ay1 = a.y, ay2 = a.y + p(a.dIn);
+      const bx1 = b.x, bx2 = b.x + p(b.wIn), by1 = b.y, by2 = b.y + p(b.dIn);
+      const overlap = ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1;
+      if (overlap) {
+        // b is on top of a — increment b's depth relative to a
+        depths.set(b.id, Math.max(depths.get(b.id), depths.get(a.id) + 1));
+      }
+    }
+  }
+  return depths;
+}
+
+// Compute unique floor coverage using a coarse pixel grid (1 cell = ~4px = ~1.4")
+function uniqueSqFt(zoneItems) {
+  const CELL = 4;
+  const covered = new Set();
+  zoneItems.forEach(item => {
+    const x1 = Math.round(item.x / CELL), y1 = Math.round(item.y / CELL);
+    const x2 = Math.round((item.x + p(item.wIn)) / CELL);
+    const y2 = Math.round((item.y + p(item.dIn)) / CELL);
+    for (let cx = x1; cx < x2; cx++)
+      for (let cy = y1; cy < y2; cy++)
+        covered.add(cx + ',' + cy);
+  });
+  const cellSqFt = (CELL / SCALE) * (CELL / SCALE); // sq ft per cell
+  return covered.size * cellSqFt;
+}
+
 function updateStats() {
   const mainItems = items.filter(i => !i.wall && (i.zone || 'floor') === 'floor');
   const atticItems = items.filter(i => !i.wall && i.zone === 'attic');
-  const usedMain = mainItems.filter(i => !i.stacked).reduce((s,i) => s + sqft(i.wIn,i.dIn), 0);
-  const usedAttic = atticItems.filter(i => !i.stacked).reduce((s,i) => s + sqft(i.wIn,i.dIn), 0);
-  const stackedCount = items.filter(i => !i.wall && i.stacked).length;
+
+  // Compute stack depths and apply visual classes + badges
+  const mainDepths = computeStackDepths(mainItems);
+  const atticDepths = computeStackDepths(atticItems);
+  const allDepths = new Map([...mainDepths, ...atticDepths]);
+
+  allDepths.forEach((depth, id) => {
+    const el = document.querySelector(`.floor-item[data-id="${id}"]`);
+    if (!el) return;
+    el.classList.remove('stack-d1','stack-d2','stack-d3');
+    if (depth === 1) el.classList.add('stack-d1');
+    else if (depth === 2) el.classList.add('stack-d2');
+    else if (depth >= 3) el.classList.add('stack-d3');
+
+    // Badge
+    let badge = el.querySelector('.stack-badge');
+    if (depth > 0) {
+      if (!badge) { badge = document.createElement('div'); badge.className = 'stack-badge'; el.appendChild(badge); }
+      badge.textContent = depth === 1 ? '×2' : depth === 2 ? '×3' : '×' + (depth+1);
+    } else if (badge) { badge.remove(); }
+
+    // Sidebar chip dims
+    const chipDims = document.getElementById('chipdims-' + id);
+    if (chipDims) {
+      const item = items.find(i => i.id === id);
+      if (item) {
+        const zone = item.zone || 'floor';
+        const depthLabel = depth > 0 ? ' <span class="chip-stacked">↑ ×' + (depth+1) + '</span>' : '';
+        chipDims.innerHTML = item.wIn + '"x' + item.dIn + '" · ' + sqft(item.wIn,item.dIn).toFixed(1) + ' sqft' +
+          (zone === 'attic' ? ' <span class="chip-zone">ATTIC</span>' : '') + depthLabel;
+      }
+    }
+  });
+
+  const usedMain = uniqueSqFt(mainItems);
+  const usedAttic = uniqueSqFt(atticItems);
+  const totalStacked = [...allDepths.values()].filter(d => d > 0).length;
   const freeMain = 190 - usedMain;
-  const pct = Math.min(100, (usedMain/190)*100);
-  document.getElementById('statUsed').textContent = usedMain.toFixed(1) + ' sq ft' + (stackedCount ? ' (+'+stackedCount+' stacked)' : '');
+  const pct = Math.min(100, (usedMain / 190) * 100);
+  document.getElementById('statUsed').textContent = usedMain.toFixed(1) + ' sq ft' + (totalStacked ? ' · ' + totalStacked + ' stacked' : '');
   document.getElementById('statAttic').textContent = usedAttic.toFixed(1) + ' sq ft';
   const fEl = document.getElementById('statFree');
   fEl.textContent = freeMain.toFixed(1) + ' sq ft';
@@ -577,12 +647,12 @@ function openModal(id) {
     document.getElementById('iD').value = item.dIn;
     document.getElementById('iZone').value = item.zone || 'floor';
     document.getElementById('iNotes').value = item.notes || '';
-    selColor = item.color; del.style.display = 'block'; rot.style.display = 'block'; document.getElementById('iStacked').checked = !!item.stacked;
+    selColor = item.color; del.style.display = 'block'; rot.style.display = 'block';
   } else {
     document.getElementById('modalTitle').textContent = 'Add item';
     ['iName','iW','iD','iNotes'].forEach(i => document.getElementById(i).value = '');
     document.getElementById('iZone').value = 'floor';
-    selColor = COLORS[0]; del.style.display = 'none'; rot.style.display = 'none'; document.getElementById('iStacked').checked = false;
+    selColor = COLORS[0]; del.style.display = 'none'; rot.style.display = 'none';
   }
   buildColorGrid();
   document.getElementById('modalOverlay').style.display = 'flex';
@@ -598,9 +668,8 @@ function saveItem() {
   const zone = document.getElementById('iZone').value;
   const notes = document.getElementById('iNotes').value.trim();
   if (!name || !wIn || !dIn) { showToast('Name and dimensions required'); return; }
-  const stacked = document.getElementById('iStacked').checked;
-  if (editingId) { Object.assign(items.find(i => i.id === editingId), { name, wIn, dIn, zone, notes, color: selColor, stacked }); }
-  else { items.push({ id: uid(), name, wIn, dIn, zone, notes, color: selColor, stacked, x: 10, y: 10 }); }
+  if (editingId) { Object.assign(items.find(i => i.id === editingId), { name, wIn, dIn, zone, notes, color: selColor }); }
+  else { items.push({ id: uid(), name, wIn, dIn, zone, notes, color: selColor, x: 10, y: 10 }); }
   closeModal(); render(); scheduleSave();
 }
 
