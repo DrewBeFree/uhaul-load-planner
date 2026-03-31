@@ -220,6 +220,7 @@
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">Cancel</button>
       <button class="btn" id="rotBtn" style="display:none" onclick="rotateItem()">↻ Rotate</button>
+      <button class="btn" id="dupBtn" style="display:none" onclick="duplicateItem()">⧉ Duplicate</button>
       <button class="btn danger" id="delBtn" style="display:none" onclick="deleteItem()">Delete</button>
       <button class="btn primary" onclick="saveItem()">Save</button>
     </div>
@@ -647,12 +648,12 @@ function openModal(id) {
     document.getElementById('iD').value = item.dIn;
     document.getElementById('iZone').value = item.zone || 'floor';
     document.getElementById('iNotes').value = item.notes || '';
-    selColor = item.color; del.style.display = 'block'; rot.style.display = 'block';
+    selColor = item.color; del.style.display = 'block'; rot.style.display = 'block'; document.getElementById('dupBtn').style.display = 'block';
   } else {
     document.getElementById('modalTitle').textContent = 'Add item';
     ['iName','iW','iD','iNotes'].forEach(i => document.getElementById(i).value = '');
     document.getElementById('iZone').value = 'floor';
-    selColor = COLORS[0]; del.style.display = 'none'; rot.style.display = 'none';
+    selColor = COLORS[0]; del.style.display = 'none'; rot.style.display = 'none'; document.getElementById('dupBtn').style.display = 'none';
   }
   buildColorGrid();
   document.getElementById('modalOverlay').style.display = 'flex';
@@ -686,6 +687,32 @@ function confirmDelete(id) {
   render(); scheduleSave();
 }
 
+function duplicateItem() {
+  if (!editingId) return;
+  const src = items.find(i => i.id === editingId);
+  if (!src) return;
+
+  // Strip trailing number to get base name
+  const baseName = src.name.replace(/ \d+$/, '').trim();
+
+  // Find highest existing number for this base name
+  let maxNum = 1;
+  items.forEach(i => {
+    if (i.name === baseName) { maxNum = Math.max(maxNum, 1); return; }
+    if (!i.name.startsWith(baseName + ' ')) return;
+    const rest = i.name.slice(baseName.length + 1);
+    const n = parseInt(rest, 10);
+    if (!isNaN(n) && String(n) === rest) maxNum = Math.max(maxNum, n);
+  });
+
+  const newName = baseName + ' ' + (maxNum + 1);
+  const clone = Object.assign({}, src, { id: uid(), name: newName, x: src.x + 12, y: src.y + 12 });
+  items.push(clone);
+  closeModal();
+  render();
+  scheduleSave();
+  showToast('Duplicated as "' + newName + '"');
+}
 function deleteItem() { if (!editingId) return; closeModal(); confirmDelete(editingId); }
 
 document.getElementById('snapToggle').addEventListener('change', e => { snapOn = e.target.checked; });
