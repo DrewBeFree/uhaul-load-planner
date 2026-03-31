@@ -213,12 +213,21 @@
       <div><label>Depth</label><input type="text" id="iD" placeholder='24 or 2&apos;' oninput="updateDimPreview()"></div>
     </div>
     <div class="dim-preview" id="dimPreview"></div>
-    <div class="field">
-      <label>Zone</label>
-      <select id="iZone">
-        <option value="floor">Main floor</option>
-        <option value="attic">Mom's Attic</option>
-      </select>
+    <div class="field field-row">
+      <div>
+        <label>Zone</label>
+        <select id="iZone">
+          <option value="floor">Main floor</option>
+          <option value="attic">Mom's Attic</option>
+        </select>
+      </div>
+      <div>
+        <label>Shape</label>
+        <select id="iShape">
+          <option value="rect">Rectangle</option>
+          <option value="canoe">Canoe (oval)</option>
+        </select>
+      </div>
     </div>
     <div class="field">
       <label>Notes</label>
@@ -447,7 +456,9 @@ function render() {
       + (zone === 'attic' ? ' attic-item' : '');
     el.dataset.id = item.id;
     const pw = p(item.wIn), ph = p(item.dIn);
-    el.style.cssText = `left:${item.x}px;top:${item.y}px;width:${pw}px;height:${ph}px;background:${item.color};`;
+    const isCanoe = item.shape === 'canoe';
+    el.style.cssText = `left:${item.x}px;top:${item.y}px;width:${pw}px;height:${ph}px;background:${item.color};`
+      + (isCanoe ? 'border-radius:50%;' : '');
     const n = document.createElement('div'); n.className = 'item-name'; n.textContent = item.name; el.appendChild(n);
     if (ph > 26) { const d = document.createElement('div'); d.className = 'item-dim'; d.textContent = item.wIn+'"x'+item.dIn+'"'; el.appendChild(d); }
     const stackOv = document.createElement('div'); stackOv.className = 'stack-overlay'; el.appendChild(stackOv);
@@ -723,12 +734,14 @@ function openModal(id) {
     document.getElementById('iW').value = item.wIn;
     document.getElementById('iD').value = item.dIn;
     document.getElementById('iZone').value = item.zone || 'floor';
+    document.getElementById('iShape').value = item.shape || 'rect';
     document.getElementById('iNotes').value = item.notes || '';
     selColor = item.color; del.style.display = 'block'; rot.style.display = 'block'; document.getElementById('dupBtn').style.display = 'block';
   } else {
     document.getElementById('modalTitle').textContent = 'Add item';
     ['iName','iW','iD','iNotes'].forEach(i => document.getElementById(i).value = '');
     document.getElementById('iZone').value = 'floor';
+    document.getElementById('iShape').value = 'rect';
     selColor = COLORS[0]; del.style.display = 'none'; rot.style.display = 'none'; document.getElementById('dupBtn').style.display = 'none';
   }
   updateDimPreview();
@@ -744,10 +757,11 @@ function saveItem() {
   const wIn = parseDim(document.getElementById('iW').value);
   const dIn = parseDim(document.getElementById('iD').value);
   const zone = document.getElementById('iZone').value;
+  const shape = document.getElementById('iShape').value;
   const notes = document.getElementById('iNotes').value.trim();
   if (!name || isNaN(wIn) || isNaN(dIn) || wIn <= 0 || dIn <= 0) { showToast('Name and valid dimensions required (e.g. 36, 3\', 3\'6")'); return; }
-  if (editingId) { Object.assign(items.find(i => i.id === editingId), { name, wIn, dIn, zone, notes, color: selColor }); }
-  else { items.push({ id: uid(), name, wIn, dIn, zone, notes, color: selColor, x: 10, y: 10 }); }
+  if (editingId) { Object.assign(items.find(i => i.id === editingId), { name, wIn, dIn, zone, shape, notes, color: selColor }); }
+  else { items.push({ id: uid(), name, wIn, dIn, zone, shape, notes, color: selColor, x: 10, y: 10 }); }
   closeModal(); render(); scheduleSave();
 }
 
