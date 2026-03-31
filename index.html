@@ -133,6 +133,9 @@
   .modal-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
   .toast { position: fixed; bottom: 18px; right: 18px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 4px; padding: 9px 14px; font-size: 11px; color: var(--text2); z-index: 3000; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
   .toast.show { opacity: 1; }
+  .del-layout-btn { padding: 5px 8px; color: var(--text3); flex-shrink: 0; }
+  .del-layout-btn:hover { color: #f0a0a0; border-color: #c45a5a; background: #6b2a2a; }
+  .dim-preview { font-size: 11px; color: var(--text2); text-align: center; margin: -2px 0 10px; letter-spacing: 1px; min-height: 16px; }
   .app-footer { text-align: center; padding: 10px 20px; font-size: 9px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
   .app-footer span { color: var(--border2); margin: 0 8px; }
 </style>
@@ -146,6 +149,7 @@
   </div>
   <div class="header-right">
     <select class="layout-select" id="layoutSelect" onchange="switchLayout(this.value)"></select>
+    <button class="btn del-layout-btn" id="delLayoutBtn" onclick="openDeleteLayoutModal()" title="Delete layout">✕</button>
     <button class="btn" onclick="saveAsNew()">Save as new</button>
     <button class="btn primary" onclick="openModal()">+ Add</button>
     <label class="snap-toggle"><input type="checkbox" class="toggle-input" id="snapToggle" checked> Snap</label>
@@ -205,9 +209,10 @@
       <input type="text" id="iName" placeholder="e.g. Dresser" maxlength="30">
     </div>
     <div class="field field-row">
-      <div><label>Width (in)</label><input type="number" id="iW" placeholder="36" min="4" max="200"></div>
-      <div><label>Depth (in)</label><input type="number" id="iD" placeholder="24" min="4" max="200"></div>
+      <div><label>Width (in)</label><input type="number" id="iW" placeholder="36" min="4" max="200" oninput="updateDimPreview()"></div>
+      <div><label>Depth (in)</label><input type="number" id="iD" placeholder="24" min="4" max="200" oninput="updateDimPreview()"></div>
     </div>
+    <div class="dim-preview" id="dimPreview"></div>
     <div class="field">
       <label>Zone</label>
       <select id="iZone">
@@ -245,6 +250,18 @@
     <div class="modal-actions">
       <button class="btn" onclick="closeSaveModal()">Cancel</button>
       <button class="btn primary" onclick="confirmSaveAs()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete layout confirmation modal -->
+<div class="modal-overlay" id="deleteLayoutModal" style="display:none">
+  <div class="modal">
+    <h3>Delete layout</h3>
+    <p id="deleteLayoutMsg" style="font-size:11px;color:var(--text2);margin-bottom:18px;line-height:1.6"></p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeDeleteLayoutModal()">Cancel</button>
+      <button class="btn danger" onclick="confirmDeleteLayout()">Delete</button>
     </div>
   </div>
 </div>
@@ -714,6 +731,7 @@ function openModal(id) {
     document.getElementById('iZone').value = 'floor';
     selColor = COLORS[0]; del.style.display = 'none'; rot.style.display = 'none'; document.getElementById('dupBtn').style.display = 'none';
   }
+  updateDimPreview();
   buildColorGrid();
   document.getElementById('modalOverlay').style.display = 'flex';
   setTimeout(() => document.getElementById('iName').focus(), 50);
@@ -733,9 +751,17 @@ function saveItem() {
   closeModal(); render(); scheduleSave();
 }
 
-function rotateItem() {
+function updateDimPreview() {
   const w = document.getElementById('iW').value, d = document.getElementById('iD').value;
-  document.getElementById('iW').value = d; document.getElementById('iD').value = w;
+  document.getElementById('dimPreview').textContent = (w && d) ? w + '" wide × ' + d + '" deep' : '';
+}
+
+function rotateItem() {
+  const wEl = document.getElementById('iW'), dEl = document.getElementById('iD');
+  const w = wEl.value, d = dEl.value;
+  wEl.value = d; dEl.value = w;
+  updateDimPreview();
+  if (w && d) showToast('↻ Rotated: ' + d + '" wide × ' + w + '" deep');
 }
 
 function confirmDelete(id) {
@@ -774,11 +800,44 @@ function duplicateItem() {
 }
 function deleteItem() { if (!editingId) return; closeModal(); confirmDelete(editingId); }
 
+function openDeleteLayoutModal() {
+  const layout = allLayouts.find(l => l.id === currentLayoutId);
+  const name = layout ? (layout.name || currentLayoutId) : currentLayoutId;
+  document.getElementById('deleteLayoutMsg').textContent = 'Delete "' + name + '"? This cannot be undone.';
+  document.getElementById('deleteLayoutModal').style.display = 'flex';
+}
+
+function closeDeleteLayoutModal() { document.getElementById('deleteLayoutModal').style.display = 'none'; }
+
+async function confirmDeleteLayout() {
+  closeDeleteLayoutModal();
+  setSync('saving', 'Deleting...');
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/layouts?id=eq.${encodeURIComponent(currentLayoutId)}`, {
+      method: 'DELETE', headers: HEADERS
+    });
+  } catch(e) { setSync('error', 'Delete failed'); return; }
+  const deletedName = allLayouts.find(l => l.id === currentLayoutId)?.name || currentLayoutId;
+  allLayouts = allLayouts.filter(l => l.id !== currentLayoutId);
+  if (allLayouts.length === 0) {
+    currentLayoutId = 'uhaul-main';
+    items = defaultItems();
+    await save();
+    await fetchLayouts();
+  } else {
+    currentLayoutId = allLayouts[0].id;
+    renderLayoutSelect();
+    await loadLayout(currentLayoutId);
+  }
+  showToast('Deleted "' + deletedName + '"');
+}
+
 document.getElementById('snapToggle').addEventListener('change', e => { snapOn = e.target.checked; });
 document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
 document.getElementById('saveModal').addEventListener('click', e => { if (e.target === document.getElementById('saveModal')) closeSaveModal(); });
+document.getElementById('deleteLayoutModal').addEventListener('click', e => { if (e.target === document.getElementById('deleteLayoutModal')) closeDeleteLayoutModal(); });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeModal(); closeSaveModal(); }
+  if (e.key === 'Escape') { closeModal(); closeSaveModal(); closeDeleteLayoutModal(); }
   if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && document.getElementById('modalOverlay').style.display === 'none') confirmDelete(selectedId);
 });
 
