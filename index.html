@@ -163,7 +163,7 @@
       <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
     </div>
     <div class="sidebar-section">
-      <div class="sidebar-label">Items <span style="font-size:8px;color:var(--text3)">(dbl-tap to edit)</span></div>
+      <div class="sidebar-label">Items <span style="font-size:8px;color:var(--text3)">(long-press to edit)</span></div>
     </div>
     <div class="item-list" id="itemList"></div>
   </div>
@@ -436,16 +436,23 @@ function render() {
     if (!item.wall) {
       el.addEventListener('mousedown', startDrag);
       el.addEventListener('touchstart', startDrag, { passive: false });
-      el.addEventListener('click', e => { e.stopPropagation(); selectItem(item.id); });
+      el.addEventListener('click', e => { e.stopPropagation(); selectItem(item.id); collapseSidebar(); });
       el.addEventListener('dblclick', e => { e.stopPropagation(); openModal(item.id); });
-      let lastTap = 0, tapX = 0, tapY = 0;
-      el.addEventListener('touchstart', e => { tapX = e.touches[0].clientX; tapY = e.touches[0].clientY; }, { passive: true });
+      let pressTimer = null, pressX = 0, pressY = 0, longPressed = false;
+      el.addEventListener('touchstart', e => {
+        longPressed = false;
+        pressX = e.touches[0].clientX; pressY = e.touches[0].clientY;
+        pressTimer = setTimeout(() => { pressTimer = null; longPressed = true; openModal(item.id); }, 600);
+      }, { passive: true });
+      el.addEventListener('touchmove', e => {
+        if (!pressTimer) return;
+        if (Math.abs(e.touches[0].clientX - pressX) > 8 || Math.abs(e.touches[0].clientY - pressY) > 8) {
+          clearTimeout(pressTimer); pressTimer = null;
+        }
+      }, { passive: true });
       el.addEventListener('touchend', e => {
-        const dx = Math.abs(e.changedTouches[0].clientX - tapX), dy = Math.abs(e.changedTouches[0].clientY - tapY);
-        if (dx > 8 || dy > 8) return;
-        const now = Date.now();
-        if (now - lastTap < 350) { e.stopPropagation(); e.preventDefault(); openModal(item.id); }
-        lastTap = now;
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+        if (longPressed) { e.stopPropagation(); }
       });
     }
     container.appendChild(el);
