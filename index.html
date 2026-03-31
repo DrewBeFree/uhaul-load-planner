@@ -263,6 +263,7 @@ const COLORS = ['#633806','#854F0B','#26215C','#185FA5','#0F6E56','#5f5e5a','#44
 
 let items = [], selectedId = null, dragReady = null, editingId = null, selColor = COLORS[0];
 let snapOn = true, saveTimer = null, dragState = null;
+let lastMousedownId = null, lastMousedownTime = 0;
 let currentLayoutId = 'uhaul-main';
 let allLayouts = [];
 
@@ -436,8 +437,6 @@ function render() {
     if (!item.wall) {
       el.addEventListener('mousedown', startDrag);
       el.addEventListener('touchstart', startDrag, { passive: false });
-      el.addEventListener('click', e => { e.stopPropagation(); selectItem(item.id); collapseSidebar(); });
-      el.addEventListener('dblclick', e => { e.stopPropagation(); openModal(item.id); });
       let pressTimer = null, pressX = 0, pressY = 0, longPressed = false;
       el.addEventListener('touchstart', e => {
         longPressed = false;
@@ -608,11 +607,22 @@ function startDrag(e) {
   const id = el.dataset.id;
   const item = items.find(i => i.id === id);
   if (!item) return;
+  // Double-click detection via mousedown timing (dblclick event is unreliable since render() recreates elements)
+  if (e.type === 'mousedown') {
+    const now = Date.now();
+    if (lastMousedownId === id && now - lastMousedownTime < 350) {
+      lastMousedownId = null; lastMousedownTime = 0;
+      openModal(id); return;
+    }
+    lastMousedownId = id; lastMousedownTime = now;
+  }
   // require item to be selected first (drag-ready) before dragging
   if (dragReady !== id) {
     e.preventDefault();
-    if (selectedId !== id) { selectedId = id; dragReady = null; render(); }
-    else { dragReady = id; render(); }
+    if (selectedId !== id) { selectedId = id; dragReady = null; }
+    else { dragReady = id; }
+    collapseSidebar();
+    render();
     return;
   }
   e.preventDefault();
