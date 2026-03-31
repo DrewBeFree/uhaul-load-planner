@@ -209,8 +209,8 @@
       <input type="text" id="iName" placeholder="e.g. Dresser" maxlength="30">
     </div>
     <div class="field field-row">
-      <div><label>Width (in)</label><input type="number" id="iW" placeholder="36" min="4" max="200" oninput="updateDimPreview()"></div>
-      <div><label>Depth (in)</label><input type="number" id="iD" placeholder="24" min="4" max="200" oninput="updateDimPreview()"></div>
+      <div><label>Width</label><input type="text" id="iW" placeholder='36 or 3&apos;' oninput="updateDimPreview()"></div>
+      <div><label>Depth</label><input type="text" id="iD" placeholder='24 or 2&apos;' oninput="updateDimPreview()"></div>
     </div>
     <div class="dim-preview" id="dimPreview"></div>
     <div class="field">
@@ -269,7 +269,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION = 'v0.8';
+const VERSION = 'v0.85';
 const SUPABASE_URL = 'https://vqfyaoanqpbcpbwtetcz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BQR3QmatKdMWtwIirlA5Dw_DLfiEOY9';
 const SCALE = 34;
@@ -741,27 +741,52 @@ function closeModal() { document.getElementById('modalOverlay').style.display = 
 
 function saveItem() {
   const name = document.getElementById('iName').value.trim();
-  const wIn = parseInt(document.getElementById('iW').value);
-  const dIn = parseInt(document.getElementById('iD').value);
+  const wIn = parseDim(document.getElementById('iW').value);
+  const dIn = parseDim(document.getElementById('iD').value);
   const zone = document.getElementById('iZone').value;
   const notes = document.getElementById('iNotes').value.trim();
-  if (!name || !wIn || !dIn) { showToast('Name and dimensions required'); return; }
+  if (!name || isNaN(wIn) || isNaN(dIn) || wIn <= 0 || dIn <= 0) { showToast('Name and valid dimensions required (e.g. 36, 3\', 3\'6")'); return; }
   if (editingId) { Object.assign(items.find(i => i.id === editingId), { name, wIn, dIn, zone, notes, color: selColor }); }
   else { items.push({ id: uid(), name, wIn, dIn, zone, notes, color: selColor, x: 10, y: 10 }); }
   closeModal(); render(); scheduleSave();
 }
 
+function parseDim(val) {
+  const s = String(val).trim();
+  // feet'inches" format: 3'6" or 3'6
+  let m = s.match(/^(\d+(?:\.\d+)?)'[\s]*(\d+(?:\.\d+)?)"?$/);
+  if (m) return Math.round(parseFloat(m[1]) * 12 + parseFloat(m[2]));
+  // feet only: 3' or 3ft
+  m = s.match(/^(\d+(?:\.\d+)?)\s*(?:'|ft)$/i);
+  if (m) return Math.round(parseFloat(m[1]) * 12);
+  // plain number or explicit inches: 36 or 36" or 36in
+  m = s.match(/^(\d+(?:\.\d+)?)\s*(?:"|in)?$/i);
+  if (m) return Math.round(parseFloat(m[1]));
+  return NaN;
+}
+
+function fmtIn(inches) {
+  if (inches >= 12) {
+    const ft = Math.floor(inches / 12), rem = inches % 12;
+    return rem ? ft + "'" + rem + '"' : ft + "'";
+  }
+  return inches + '"';
+}
+
 function updateDimPreview() {
-  const w = document.getElementById('iW').value, d = document.getElementById('iD').value;
-  document.getElementById('dimPreview').textContent = (w && d) ? w + '" wide × ' + d + '" deep' : '';
+  const w = parseDim(document.getElementById('iW').value);
+  const d = parseDim(document.getElementById('iD').value);
+  const el = document.getElementById('dimPreview');
+  el.textContent = (!isNaN(w) && !isNaN(d) && w > 0 && d > 0) ? fmtIn(w) + ' wide × ' + fmtIn(d) + ' deep' : '';
 }
 
 function rotateItem() {
   const wEl = document.getElementById('iW'), dEl = document.getElementById('iD');
-  const w = wEl.value, d = dEl.value;
+  const w = parseDim(wEl.value), d = parseDim(dEl.value);
+  if (isNaN(w) || isNaN(d)) return;
   wEl.value = d; dEl.value = w;
   updateDimPreview();
-  if (w && d) showToast('↻ Rotated: ' + d + '" wide × ' + w + '" deep');
+  showToast('↻ Rotated: ' + fmtIn(d) + ' wide × ' + fmtIn(w) + ' deep');
 }
 
 function confirmDelete(id) {
