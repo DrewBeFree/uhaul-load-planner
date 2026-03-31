@@ -73,6 +73,9 @@
   .chip-btn { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 10px; padding: 2px 4px; border-radius: 2px; }
   .chip-btn:hover { color: var(--text); background: var(--border); }
   .chip-btn.del:hover { color: #c45a5a; }
+  .chip-btn.order { opacity: 0.5; font-size: 9px; }
+  .chip-btn.order:hover { opacity: 1; }
+  .floor-item.drag-ready { outline: 2px solid var(--accent); outline-offset: 1px; cursor: grab; box-shadow: 0 0 0 4px rgba(232,168,64,0.2); }
 
   .canvas-wrap { flex: 1; overflow: auto; padding: 16px; background: var(--bg); }
   .canvas-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -253,7 +256,7 @@ const ATTIC_W = 97; const ATTIC_L = 31;
 const SNAP = SCALE / 3;
 const COLORS = ['#633806','#854F0B','#26215C','#185FA5','#0F6E56','#5f5e5a','#444441','#993C1D','#3C3489','#7a2020','#1a5a3a','#4a3a80','#805020','#2a6080','#606020'];
 
-let items = [], selectedId = null, editingId = null, selColor = COLORS[0];
+let items = [], selectedId = null, dragReady = null, editingId = null, selColor = COLORS[0];
 let snapOn = true, saveTimer = null, dragState = null;
 let currentLayoutId = 'uhaul-main';
 let allLayouts = [];
@@ -417,6 +420,7 @@ function render() {
     el.className = 'floor-item'
       + (item.wall ? ' wall-item' : '')
       + (item.id === selectedId ? ' selected' : '')
+      + (item.id === dragReady ? ' drag-ready' : '')
       + (zone === 'attic' ? ' attic-item' : '');
     el.dataset.id = item.id;
     const pw = p(item.wIn), ph = p(item.dIn);
@@ -456,6 +460,8 @@ function renderSidebar() {
         <div class="chip-dims" id="chipdims-${item.id}">${item.wIn}"x${item.dIn}" · ${sqft(item.wIn,item.dIn).toFixed(1)} sqft${zone==='attic'?' <span class="chip-zone">ATTIC</span>':''}</div>
       </div>
       <div class="chip-actions">
+        <button class="chip-btn order" onclick="moveItemUp('${item.id}');event.stopPropagation()" title="Move up in stack">▲</button>
+        <button class="chip-btn order" onclick="moveItemDown('${item.id}');event.stopPropagation()" title="Move down in stack">▼</button>
         <button class="chip-btn" onclick="openModal('${item.id}');event.stopPropagation()">✎</button>
         <button class="chip-btn del" onclick="confirmDelete('${item.id}');event.stopPropagation()">✕</button>
       </div>`;
@@ -551,9 +557,32 @@ function updateStats() {
   document.getElementById('progressFill').style.width = pct + '%';
 }
 
-function selectItem(id) { selectedId = selectedId === id ? null : id; render(); }
-floor.addEventListener('click', () => { selectedId = null; render(); });
-attic.addEventListener('click', () => { selectedId = null; render(); });
+function moveItemUp(id) {
+  const idx = items.findIndex(i => i.id === id);
+  if (idx <= 0) return;
+  [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]];
+  render(); scheduleSave();
+}
+
+function moveItemDown(id) {
+  const idx = items.findIndex(i => i.id === id);
+  if (idx < 0 || idx >= items.length - 1) return;
+  [items[idx], items[idx + 1]] = [items[idx + 1], items[idx]];
+  render(); scheduleSave();
+}
+
+function selectItem(id) {
+  if (selectedId === id) {
+    // second click/tap — activate drag-ready mode
+    dragReady = dragReady === id ? null : id;
+  } else {
+    selectedId = id;
+    dragReady = null;
+  }
+  render();
+}
+floor.addEventListener('click', () => { selectedId = null; dragReady = null; collapseSidebar(); render(); });
+attic.addEventListener('click', () => { selectedId = null; dragReady = null; collapseSidebar(); render(); });
 
 function getClientXY(e) {
   if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -563,11 +592,18 @@ function getClientXY(e) {
 
 function startDrag(e) {
   if (e.type === 'mousedown' && e.button !== 0) return;
-  e.preventDefault();
   const el = e.currentTarget;
   const id = el.dataset.id;
   const item = items.find(i => i.id === id);
   if (!item) return;
+  // require item to be selected first (drag-ready) before dragging
+  if (dragReady !== id) {
+    e.preventDefault();
+    if (selectedId !== id) { selectedId = id; dragReady = null; render(); }
+    else { dragReady = id; render(); }
+    return;
+  }
+  e.preventDefault();
   const zone = item.zone || 'floor';
   const container = getZoneEl(zone);
   const rect = container.getBoundingClientRect();
@@ -613,6 +649,7 @@ function startDrag(e) {
   const onUp = () => {
     if (!dragState) return;
     dragState.el.classList.remove('dragging');
+    dragReady = null;
     dragState = null; render(); scheduleSave();
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onUp);
@@ -722,6 +759,14 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeModal(); closeSaveModal(); }
   if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && document.getElementById('modalOverlay').style.display === 'none') confirmDelete(selectedId);
 });
+
+function collapseSidebar() {
+  const sb = document.getElementById('sidebar');
+  if (!sb.classList.contains('collapsed')) {
+    sb.classList.add('collapsed');
+    document.getElementById('sidebarToggle').textContent = '▶';
+  }
+}
 
 function toggleSidebar() {
   const sb = document.getElementById('sidebar');
