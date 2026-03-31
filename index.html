@@ -106,6 +106,10 @@
   .floor-item.selected { outline: 2px solid var(--accent); outline-offset: 1px; z-index: 500; }
   .floor-item.wall-item { cursor: default; opacity: 0.55; }
   .floor-item.attic-item { outline: 1px dashed rgba(255,255,255,0.3); }
+  .floor-item.stacked { opacity: 0.75; }
+  .floor-item.stacked::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.12) 4px, rgba(255,255,255,0.12) 5px); pointer-events: none; }
+  .stacked-badge { font-size: 7px; font-family: 'Courier New', monospace; color: rgba(255,255,255,0.8); letter-spacing: 1px; text-transform: uppercase; background: rgba(0,0,0,0.3); padding: 1px 3px; border-radius: 2px; margin-top: 2px; }
+  .chip-stacked { font-size: 8px; color: #6db87a; margin-left: 3px; }
   .item-name { font-size: 9px; font-weight: 700; font-family: 'Courier New', monospace; color: white; line-height: 1.2; padding: 0 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
   .item-dim { font-size: 8px; font-family: 'Courier New', monospace; color: rgba(255,255,255,0.7); line-height: 1.2; }
 
@@ -204,6 +208,10 @@
     <div class="field">
       <label>Notes</label>
       <input type="text" id="iNotes" placeholder="optional" maxlength="60">
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" id="iStacked" style="width:auto;accent-color:var(--accent);">
+      <label for="iStacked" style="margin:0;font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;cursor:pointer;">Stacked on another item (exclude from sq ft)</label>
     </div>
     <div class="field">
       <label>Color</label>
@@ -408,12 +416,14 @@ function render() {
     el.className = 'floor-item'
       + (item.wall ? ' wall-item' : '')
       + (item.id === selectedId ? ' selected' : '')
-      + (zone === 'attic' ? ' attic-item' : '');
+      + (zone === 'attic' ? ' attic-item' : '')
+      + (item.stacked ? ' stacked' : '');
     el.dataset.id = item.id;
     const pw = p(item.wIn), ph = p(item.dIn);
     el.style.cssText = `left:${item.x}px;top:${item.y}px;width:${pw}px;height:${ph}px;background:${item.color};`;
     const n = document.createElement('div'); n.className = 'item-name'; n.textContent = item.name; el.appendChild(n);
     if (ph > 26) { const d = document.createElement('div'); d.className = 'item-dim'; d.textContent = item.wIn+'"x'+item.dIn+'"'; el.appendChild(d); }
+    if (item.stacked && ph > 38) { const sb = document.createElement('div'); sb.className = 'stacked-badge'; sb.textContent = '↑ stacked'; el.appendChild(sb); }
     if (!item.wall) {
       el.addEventListener('mousedown', startDrag);
       el.addEventListener('touchstart', startDrag, { passive: false });
@@ -443,7 +453,7 @@ function renderSidebar() {
     c.innerHTML = `<div class="chip-color" style="background:${item.color}"></div>
       <div class="chip-info">
         <div class="chip-name">${item.name}</div>
-        <div class="chip-dims">${item.wIn}"x${item.dIn}" · ${sqft(item.wIn,item.dIn).toFixed(1)} sqft${zone==='attic'?' <span class="chip-zone">ATTIC</span>':''}</div>
+        <div class="chip-dims">${item.wIn}"x${item.dIn}" · ${item.stacked ? '—' : sqft(item.wIn,item.dIn).toFixed(1)+' sqft'}${zone==='attic'?' <span class="chip-zone">ATTIC</span>':''}${item.stacked?' <span class="chip-stacked">↑ stacked</span>':''}</div>
       </div>
       <div class="chip-actions">
         <button class="chip-btn" onclick="openModal('${item.id}');event.stopPropagation()">✎</button>
@@ -457,11 +467,12 @@ function renderSidebar() {
 function updateStats() {
   const mainItems = items.filter(i => !i.wall && (i.zone || 'floor') === 'floor');
   const atticItems = items.filter(i => !i.wall && i.zone === 'attic');
-  const usedMain = mainItems.reduce((s,i) => s + sqft(i.wIn,i.dIn), 0);
-  const usedAttic = atticItems.reduce((s,i) => s + sqft(i.wIn,i.dIn), 0);
+  const usedMain = mainItems.filter(i => !i.stacked).reduce((s,i) => s + sqft(i.wIn,i.dIn), 0);
+  const usedAttic = atticItems.filter(i => !i.stacked).reduce((s,i) => s + sqft(i.wIn,i.dIn), 0);
+  const stackedCount = items.filter(i => !i.wall && i.stacked).length;
   const freeMain = 190 - usedMain;
   const pct = Math.min(100, (usedMain/190)*100);
-  document.getElementById('statUsed').textContent = usedMain.toFixed(1) + ' sq ft';
+  document.getElementById('statUsed').textContent = usedMain.toFixed(1) + ' sq ft' + (stackedCount ? ' (+'+stackedCount+' stacked)' : '');
   document.getElementById('statAttic').textContent = usedAttic.toFixed(1) + ' sq ft';
   const fEl = document.getElementById('statFree');
   fEl.textContent = freeMain.toFixed(1) + ' sq ft';
@@ -566,12 +577,12 @@ function openModal(id) {
     document.getElementById('iD').value = item.dIn;
     document.getElementById('iZone').value = item.zone || 'floor';
     document.getElementById('iNotes').value = item.notes || '';
-    selColor = item.color; del.style.display = 'block'; rot.style.display = 'block';
+    selColor = item.color; del.style.display = 'block'; rot.style.display = 'block'; document.getElementById('iStacked').checked = !!item.stacked;
   } else {
     document.getElementById('modalTitle').textContent = 'Add item';
     ['iName','iW','iD','iNotes'].forEach(i => document.getElementById(i).value = '');
     document.getElementById('iZone').value = 'floor';
-    selColor = COLORS[0]; del.style.display = 'none'; rot.style.display = 'none';
+    selColor = COLORS[0]; del.style.display = 'none'; rot.style.display = 'none'; document.getElementById('iStacked').checked = false;
   }
   buildColorGrid();
   document.getElementById('modalOverlay').style.display = 'flex';
@@ -587,8 +598,9 @@ function saveItem() {
   const zone = document.getElementById('iZone').value;
   const notes = document.getElementById('iNotes').value.trim();
   if (!name || !wIn || !dIn) { showToast('Name and dimensions required'); return; }
-  if (editingId) { Object.assign(items.find(i => i.id === editingId), { name, wIn, dIn, zone, notes, color: selColor }); }
-  else { items.push({ id: uid(), name, wIn, dIn, zone, notes, color: selColor, x: 10, y: 10 }); }
+  const stacked = document.getElementById('iStacked').checked;
+  if (editingId) { Object.assign(items.find(i => i.id === editingId), { name, wIn, dIn, zone, notes, color: selColor, stacked }); }
+  else { items.push({ id: uid(), name, wIn, dIn, zone, notes, color: selColor, stacked, x: 10, y: 10 }); }
   closeModal(); render(); scheduleSave();
 }
 
