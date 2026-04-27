@@ -78,7 +78,7 @@
   .chip-btn.order:hover { opacity: 1; }
   .floor-item.drag-ready { outline: 2px solid var(--accent); outline-offset: 1px; cursor: grab; box-shadow: 0 0 0 4px rgba(232,168,64,0.2); }
 
-  .canvas-wrap { flex: 1; overflow: auto; padding: 16px; background: var(--bg); }
+  .canvas-wrap { flex: 1; overflow: auto; padding: 16px; background: var(--bg); display: flex; flex-direction: column; align-items: center; }
   .canvas-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
   .canvas-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
   .truck-outer { position: relative; margin: 0 auto; background: var(--truck-wall); border-radius: 10px; border: 2px solid #4a4a46; display: inline-block; }
@@ -279,7 +279,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION = 'v0.85';
+const VERSION = 'v0.86';
 const SUPABASE_URL = 'https://vqfyaoanqpbcpbwtetcz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BQR3QmatKdMWtwIirlA5Dw_DLfiEOY9';
 const SCALE = 34;
@@ -902,6 +902,10 @@ function showToast(msg) {
 
 async function init() {
   initFloor();
+  if (window.innerWidth <= 640) {
+    document.getElementById('sidebar').classList.add('collapsed');
+    document.getElementById('sidebarToggle').textContent = '▶';
+  }
   await fetchLayouts();
   if (allLayouts.length === 0) {
     // First ever load — create the default layout
