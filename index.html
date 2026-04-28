@@ -18,8 +18,9 @@
 
   header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; gap: 10px; flex-wrap: wrap; }
   .header-left { display: flex; align-items: center; gap: 8px; }
-  .logo { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; white-space: nowrap; }
+  .logo { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
   .logo span { color: var(--text3); font-weight: 400; }
+  .logo-truck { width: 34px; height: 18px; flex-shrink: 0; }
   .header-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .sync-status { font-size: 10px; letter-spacing: 1px; color: var(--text3); white-space: nowrap; }
   .sync-status.saving { color: var(--accent); }
@@ -79,6 +80,8 @@
   .floor-item.drag-ready { outline: 2px solid var(--accent); outline-offset: 1px; cursor: grab; box-shadow: 0 0 0 4px rgba(232,168,64,0.2); }
 
   .canvas-wrap { flex: 1; overflow: auto; padding: 16px; background: var(--bg); display: flex; flex-direction: column; align-items: center; }
+  .zoom-controls { display: flex; align-items: center; gap: 4px; margin-bottom: 12px; }
+  .zoom-btn { padding: 4px 10px; font-size: 13px; line-height: 1; min-width: 32px; text-align: center; letter-spacing: 0; }
   .canvas-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
   .canvas-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
   .truck-outer { position: relative; margin: 0 auto; background: var(--truck-wall); border-radius: 10px; border: 2px solid #4a4a46; display: inline-block; }
@@ -146,7 +149,17 @@
 <header>
   <div class="header-left">
     <button class="btn toggle-sidebar" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
-    <div class="logo">U-Haul <span>/ Load Planner</span></div>
+    <div class="logo">
+      <svg class="logo-truck" viewBox="0 0 34 18" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="1" width="20" height="14" rx="1.5" fill="#FF6600"/>
+        <path d="M20 4 L29 4 L32 9 L32 15 L20 15 Z" fill="#FF6600"/>
+        <rect x="21" y="5" width="8" height="5" rx="0.5" fill="rgba(180,220,255,0.55)"/>
+        <circle cx="5" cy="15" r="3" fill="#1a1a18"/>
+        <circle cx="14" cy="15" r="3" fill="#1a1a18"/>
+        <circle cx="27" cy="15" r="3" fill="#1a1a18"/>
+      </svg>
+      U-Haul <span>/ Load Planner</span>
+    </div>
   </div>
   <div class="header-right">
     <select class="layout-select" id="layoutSelect" onchange="switchLayout(this.value)"></select>
@@ -174,7 +187,12 @@
   </div>
 
   <div class="canvas-wrap">
-    <div class="truck-outer">
+    <div class="zoom-controls">
+      <button class="btn zoom-btn" onclick="zoomOut()" title="Zoom out">−</button>
+      <button class="btn zoom-btn" id="zoomLabel" onclick="resetZoom()" title="Reset zoom">100%</button>
+      <button class="btn zoom-btn" onclick="zoomIn()" title="Zoom in">+</button>
+    </div>
+    <div class="truck-outer" id="truckOuter">
       <div class="truck-label">26' U-Haul — overhead (cab front · door rear)</div>
       <div class="dim-top">8'1" wide</div>
 
@@ -279,7 +297,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION = 'v0.86';
+const VERSION = 'v0.9.0';
 const SUPABASE_URL = 'https://vqfyaoanqpbcpbwtetcz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BQR3QmatKdMWtwIirlA5Dw_DLfiEOY9';
 const SCALE = 34;
@@ -293,6 +311,16 @@ let snapOn = true, saveTimer = null, dragState = null;
 let lastMousedownId = null, lastMousedownTime = 0;
 let currentLayoutId = 'uhaul-main';
 let allLayouts = [];
+let currentZoom = 1.0;
+
+function applyZoom() {
+  const truck = document.getElementById('truckOuter');
+  truck.style.zoom = currentZoom;
+  document.getElementById('zoomLabel').textContent = Math.round(currentZoom * 100) + '%';
+}
+function zoomIn() { currentZoom = Math.min(2.0, +(currentZoom + 0.1).toFixed(1)); applyZoom(); }
+function zoomOut() { currentZoom = Math.max(0.5, +(currentZoom - 0.1).toFixed(1)); applyZoom(); }
+function resetZoom() { currentZoom = 1.0; applyZoom(); }
 
 const floor = document.getElementById('floor');
 const attic = document.getElementById('attic');
